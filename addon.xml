@@ -5,6 +5,7 @@ name="Kodi plugin for ONF.ca videos"
 provider-name="fndemers">
 <requires>
     <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="script.module.xbmcswift2" version="19.0.5"/>
     <import addon="script.module.beautifulsoup4" version="4.9.3"/>
     <import addon="script.module.youtube.dl" version="21.303.0"/>
     <import addon="script.module.resolveurl" version="5.1.00"/>

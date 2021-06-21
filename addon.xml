@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.onf"
+version="0.0.1"
+name="Kodi plugin for ONF.ca videos"
+provider-name="fndemers">
+<requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="script.module.beautifulsoup4" version="4.9.3"/>
+    <import addon="script.module.youtube.dl" version="21.303.0"/>
+    <import addon="script.module.resolveurl" version="5.1.00"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>video</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">Kodi plugin for ONF.ca videos</summary>
+  <description lang="en_GB">Kodi plugin for ONF.ca videos</description>
+  <disclaimer lang="en_GB">Kodi plugin for ONF.ca videos</disclaimer>
+  <assets>
+    <icon>icon.png</icon>
+    <fanart>fanart.jpg</fanart>
+  </assets>
+  <news>ONF.ca</news>
+</extension>
+</addon>

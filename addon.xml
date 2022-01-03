@@ -4,7 +4,7 @@ version="0.0.1"
 name="Kodi plugin for ONF.ca videos"
 provider-name="fndemers">
 <requires>
-    <import addon="script.module.routing" version="0.2.0"/>
+    <import addon="script.module.routing" version="0.2.3"/>
     <import addon="script.module.beautifulsoup4" version="4.9.3"/>
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">

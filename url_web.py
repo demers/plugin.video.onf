@@ -26,7 +26,8 @@ import hashlib
 
 ADDON_ID = 'plugin.video.onf'
 
-URL_ADRESSE = 'https://onf.ca/index.php'
+URL_PREFIXE = 'https://onf.ca'
+URL_ADRESSE = URL_PREFIXE + '/index.php'
 
 FICHIER_CATEGORIES = 'get_categories.json'
 FICHIER_VIDEOS = 'get_videos_'  # On ajoutera sha1 et .json
@@ -43,6 +44,12 @@ def strip_all(chaine):
     """
     return chaine.replace('\t', '').replace('\n', '').replace('\r', '').strip(' ')
 
+def verify_url_prefixe(chaine_url, prefixe_url):
+    "Ajouter domaine http au début si non présent"
+    if chaine_url[0:4] != 'http':
+        return prefixe_url + chaine_url
+    else:
+        return chaine_url
 
 def get_categories(content_bs=None):
     """
@@ -59,29 +66,51 @@ def get_categories(content_bs=None):
     :rtype: types.GeneratorType
     """
 
-    chemin_fichier_cat = get_addondir() + FICHIER_CATEGORIES
+    # chemin_fichier_cat = get_addondir() + FICHIER_CATEGORIES
 
     retour_categories = []
-    if not content_bs and not check_file_older_than(chemin_fichier_cat, NOMBRE_JOURS_DELAI_CATEGORIES):
-        retour_categories = load_dict(chemin_fichier_cat)
-    else:
-        if not content_bs:
-            # url_content= urllib.request.urlopen(URL_ADRESSE).read()
-            url_content= urlopen(URL_ADRESSE).read()
-            liste_soup = BeautifulSoup(url_content, 'html.parser')
-        else:
-            liste_soup = content_bs
+    # if not check_file_older_than(chemin_fichier_cat, NOMBRE_JOURS_DELAI_CATEGORIES):
+        # retour_categories = load_dict(chemin_fichier_cat)
+    # else:
 
-        job_section_elements = liste_soup.find_all("section", class_="elementor-section")
-        for job_section_element in job_section_elements:
-            # Vérifier si une "sous-section" est présente dans la section...
-            job_sous_section_elements = job_section_element.find_all("section", class_="elementor-section")
-            # Vérifier si la "sous-section" est absente et s'il y a un URL...
-            if not job_sous_section_elements and job_section_element.find("a", class_="elementor-post__thumbnail__link"):
-                title_element = job_section_element.find("h2", class_="elementor-heading-title elementor-size-default")
-                # yield strip_all(title_element.text)
-                retour_categories.append(strip_all(title_element.text))
-        save_dict(retour_categories, chemin_fichier_cat)
+    if not content_bs:
+        url_content= urlopen(URL_ADRESSE).read()
+        liste_soup = BeautifulSoup(url_content, 'html.parser')
+    else:
+        liste_soup = content_bs
+
+    job_a_elements = liste_soup.find_all("a")
+    for job_a_element in job_a_elements:
+        job_h2_elements = job_a_element.find_all("h2")
+        for job_h2_element in job_h2_elements:
+            retour_categories.append((strip_all(job_h2_element.text),
+                                      verify_url_prefixe(job_a_element['href'], URL_PREFIXE)))
+
+    # job_section_elements = liste_soup.find_all("section", class_="elementor-section")
+    # job_div_elements = liste_soup.find_all("section", class_="l-bigContainer")
+    # for job_div_element in job_div_elements:
+        # job_h2_elements = job_div_element.find_all("h2")
+        # for job_h2_element in job_h2_elements:
+            # if not job_h2_element.text in retour_categories:
+                # retour_categories.append(strip_all(job_h2_element.text))
+
+    job_h2_elements = liste_soup.find_all("h2", class_="h3")
+    for job_h2_element in job_h2_elements:
+        if not job_h2_element.text in [category_tuple[0] for category_tuple in retour_categories]:
+            job_href_element = job_h2_element.find("a")
+            if job_href_element != None:
+                retour_categories.append((strip_all(job_href_element.text),
+                                          verify_url_prefixe(job_href_element['href'], URL_PREFIXE)))
+
+
+        # # Vérifier si une "sous-section" est présente dans la section...
+        # job_sous_section_elements = job_section_element.find_all("section", class_="elementor-section")
+        # # Vérifier si la "sous-section" est absente et s'il y a un URL...
+        # if not job_sous_section_elements and job_section_element.find("a", class_="elementor-post__thumbnail__link"):
+            # title_element = job_section_element.find("h2", class_="elementor-heading-title elementor-size-default")
+            # # yield strip_all(title_element.text)
+
+        # save_dict(retour_categories, chemin_fichier_cat)
     return retour_categories
 
 

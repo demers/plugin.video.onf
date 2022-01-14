@@ -24,6 +24,8 @@ import os
 import json
 import hashlib
 
+import re
+
 ADDON_ID = 'plugin.video.onf'
 
 URL_PREFIXE = 'https://onf.ca'
@@ -160,19 +162,6 @@ def get_video_genre_from_site(content_bs):
     # return_genre += ' Durée: ' + strip_all(job_temps_element.text)
 
     return return_genre
-
-
-    # genre_before_element = content_bs.find("iframe")
-    # if genre_before_element:
-        # genre_before_iframe_element = genre_before_element.parent
-        # genre_next_iframe_element = genre_before_iframe_element.findNext('p')
-        # if not genre_next_iframe_element:
-            # genre_next_iframe_element = genre_before_iframe_element.parent.findNext('p')
-
-        # return genre_next_iframe_element.get_text()
-    # else:
-        # return ''
-
 
 def get_video_description_from_site(content_bs):
     "Extraire la description de la vidéo..."
@@ -398,81 +387,18 @@ def convert_video_path(path_video):
     considering video type (Vimeo, Youtube, other).
     """
 
-    # Extract domain name
-    # domain = urllib.parse.urlparse(path_video).netloc
-    domain = urlparse(path_video).netloc
-
-    # Extract path from URL
-    # urlpath = urllib.parse.urlparse(path_video).path
-    urlpath = urlparse(path_video).path
-
     return_path = ''
 
-    # Vimeo
-    if domain.lower() == 'player.vimeo.com':
+    # Chargement de la page des vidéos...
+    url_content = urlopen(path_video).read()
+    liste_soup_video = BeautifulSoup(url_content, 'html.parser')
 
-        # On enlève les paramètres GET et on enlève le dernier "/"...
-        if urlpath.endswith('/'):
-            urlpath_noslash = urlpath[:-1]
-        else:
-            urlpath_noslash = urlpath
-
-        last_part = os.path.basename(os.path.normpath(urlpath_noslash))
-
-        return_path = 'plugin://plugin.video.vimeo/play/?video_id=' + last_part
-
-    # Youtube
-    elif domain.lower() == 'www.youtube.com':
-        # id_youtube = urllib.parse.urlparse(path_video).query.split('=')[1]
-        id_youtube = urlparse(path_video).query.split('=')[1]
-
-        return_path = 'plugin://plugin.video.youtube/play/?video_id=' + id_youtube
-
-    # Invidious
-    # https://github.com/lekma/plugin.video.invidious
-    elif domain.lower() == 'invidious.fdn.fr':
-        # On enlève les paramètres GET et on enlève le dernier "/"...
-        if urlpath.endswith('/'):
-            urlpath_noslash = urlpath[:-1]
-        else:
-            urlpath_noslash = urlpath
-        last_part = os.path.basename(os.path.normpath(urlpath_noslash))
-
-        return_path = 'plugin://plugin.video.invidious/play/?video_id=' + last_part
-
-    # Archive.org
-    elif domain.lower() == 'archive.org':
-        # On récupère le contenu de la page de la vidéo...
-        # url_content= urllib.request.urlopen(path_video).read()
-        url_content= urlopen(path_video).read()
-        content_site_video_bs = BeautifulSoup(url_content, 'html.parser')
-        new_url_video = content_site_video_bs.find('meta', {'property': "og:video"})
-        if new_url_video:
-            return_path = new_url_video['content']
-        else:
-            return_path = path_video
-
-    else:
-        # No change
-        return_path = path_video
-
-        chemin_fichier_url_domains = get_addondir() + FICHIER_VIDEOS_DOMAINS
-
-        present_in_file = False
-        if os.path.exists(chemin_fichier_url_domains):
-            file = open(chemin_fichier_url_domains, 'r')
-            if path_video in file.read():
-                present_in_file = True
-            file.close()
-
-        if not present_in_file:
-            try:
-                file = open(chemin_fichier_url_domains, 'a')
-            except IOError:
-                file.close()
-            finally:
-                file.write(path_video + "\n")
-                file.close()
+    job_script_elements = liste_soup_video.find_all("script")
+    for job_script_element in job_script_elements:
+        # re.search(r'meta\s*=\s*(.*?}])\s*\n', job_script_element.text)
+        resultat_search = re.search(r"source\s*:\s*'(.*)'", job_script_element.text)
+        if resultat_search:
+            return_path = resultat_search[1]
 
     return return_path
 

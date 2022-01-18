@@ -8,10 +8,13 @@ if ((3, 0) <= sys.version_info <= (3, 9)):
     # import urllib.parse
     from urllib.parse import urlparse
     # import urllib.request
-    from urllib.request import urlopen
+    # from urllib.request import urlopen
+    from urllib.request import Request, urlopen
 elif ((2, 0) <= sys.version_info <= (2, 9)):
     from urlparse import urlparse
-    from urllib2 import urlopen
+    # from urllib2 import urlopen
+    from urllib2 import Request, urlopen
+
 
 import os.path
 
@@ -35,11 +38,14 @@ FICHIER_CATEGORIES = 'get_categories.json'
 FICHIER_VIDEOS = 'get_videos_'  # On ajoutera sha1 et .json
 FICHIER_VIDEOS_DOMAINS = 'list_url_domains.json'
 
-NOMBRE_JOURS_DELAI_CATEGORIES = 13
-NOMBRE_JOURS_DELAI_VIDEOS = 2
+NOMBRE_JOURS_DELAI_CATEGORIES = 7
+NOMBRE_JOURS_DELAI_VIDEOS = 3
 
 # Variable disponible tout au long de l'exécution du script
 CATEGORIES_WITH_URL = []
+
+# Section spéciale
+TITRE_LA_COURBE = 'La Courbe | '
 
 def strip_all(chaine):
     """
@@ -55,6 +61,62 @@ def verify_url_prefixe(chaine_url, prefixe_url):
         return prefixe_url + chaine_url
     else:
         return chaine_url
+
+def verify_url_video_inside(url):
+    "Vérifier s'il y a au moins une vidéo sur une page"
+
+    reponse_video = False
+
+    url_content= urlopen(url).read()
+    liste_soup = BeautifulSoup(url_content, 'html.parser')
+
+    job_a_element = liste_soup.find("a", class_="containerScreenshot")
+    if job_a_element:
+        reponse_video = True
+
+    job_iframe_element = liste_soup.find('iframe', {'id': "player-iframe"})
+    if job_iframe_element:
+        reponse_video = True
+
+    job_div_element = liste_soup.find('div', class_="banner")
+    if job_div_element:
+        reponse_video = True
+
+    job_a_elements = liste_soup.find_all('a')
+    for job_a_element in job_a_elements:
+        job_img_element = job_a_element.find('img', class_="banner_image")
+        if job_img_element:
+            reponse_video = True
+
+    return reponse_video
+
+def read_url(url_text):
+    "Chargement d'une page Web de façon sécuritaire"
+    req = Request(url_text, headers={'User-Agent': 'Mozilla/5.0'})
+
+    try:
+        url_content = urlopen(url_text).read()
+    except:
+        url_content = ''
+
+    return url_content
+
+def extract_themes_la_courbe(url_principal):
+    "Extraire les titres de la page La Courbe de l'ONF dans une liste de tuples (titre, url)"
+
+    url_content= urlopen(url_principal).read()
+    liste_soup = BeautifulSoup(url_content, 'html.parser')
+
+    theme_tuple = []
+
+    job_nav_elements = liste_soup.find_all("nav", class_="")
+    for job_nav_element in job_nav_elements:
+        job_a_elements = job_nav_element.find_all("a")
+        for job_a_element in job_a_elements:
+            if job_a_element.has_attr('data-introtab') and strip_all(job_a_element['data-introtab'])[0:5] == 'theme':
+                theme_tuple.append((job_a_element.text, verify_url_prefixe(job_a_element['href'], URL_PREFIXE)))
+
+    return theme_tuple
 
 def get_categories(content_bs=None):
     """
@@ -92,8 +154,11 @@ def get_categories(content_bs=None):
         for job_a_element in job_a_elements:
             job_h2_elements = job_a_element.find_all("h2")
             for job_h2_element in job_h2_elements:
-                retour_categories_url.append((strip_all(job_h2_element.text),
-                                        verify_url_prefixe(job_a_element['href'], URL_PREFIXE)))
+                url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
+                if verify_url_video_inside(url_video):
+                    retour_categories_url.append((strip_all(job_h2_element.text), url_video))
+                # retour_categories_url.append((strip_all(job_h2_element.text),
+                                        # verify_url_prefixe(job_a_element['href'], URL_PREFIXE)))
 
         # Recherche des sections avec carroussel dans la page.
         job_h2_elements = liste_soup.find_all("h2", class_="h3")
@@ -101,17 +166,20 @@ def get_categories(content_bs=None):
             if not job_h2_element.text in [category_tuple[0] for category_tuple in retour_categories_url]:
                 job_href_element = job_h2_element.find("a")
                 if job_href_element:
-                    retour_categories_url.append((strip_all(job_href_element.text),
-                                            verify_url_prefixe(job_href_element['href'], URL_PREFIXE)))
+                    url_video = verify_url_prefixe(job_href_element['href'], URL_PREFIXE)
+                    if verify_url_video_inside(url_video):
+                        retour_categories_url.append((strip_all(job_href_element.text), url_video))
 
         # Recherche de la section 'Cinéma autochtone' présent en jan. 2022.
-        job_h2_elements = liste_soup.find_all("h2", class_="h6")
-        for job_h2_element in job_h2_elements:
-            if not job_h2_element.text in [category_tuple[0] for category_tuple in retour_categories_url]:
-                job_href_element = job_h2_element.find("a")
-                if job_href_element:
-                    retour_categories_url.append((strip_all(job_href_element.text),
-                                            verify_url_prefixe(job_href_element['href'], URL_PREFIXE)))
+        job_a_element = liste_soup.find('a', {'id': "indigenousCinemaBanner"})
+        if job_a_element and job_a_element.has_attr('href'):
+            url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
+            job_h2_element = job_a_element.find("h2", class_="h6")
+            if job_h2_element:
+                url_text = strip_all(job_h2_element.text)
+            else:
+                url_text = 'Inconnu'
+            retour_categories_url.append((url_text, url_video))
 
         #soup.find_all('div', class_=lambda c: 'ABC' in c and 'BCD' in c and 'XYZ' not in c)
 
@@ -121,14 +189,16 @@ def get_categories(content_bs=None):
             if not job_a_element['href'] in [category_tuple[1] for category_tuple in retour_categories_url]:
                 job_img_elements = liste_soup.find_all("img", class_="cb-logo")
                 for job_img_element in job_img_elements:
-                    retour_categories_url.append((strip_all(job_img_element['alt']),
-                                            verify_url_prefixe(job_a_element['href'], URL_PREFIXE)))
+                    url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
+                    if verify_url_video_inside(url_video):
+                        for (titre_theme, url_theme) in extract_themes_la_courbe(url_video):
+                            retour_categories_url.append((TITRE_LA_COURBE + titre_theme, url_theme))
+                            # retour_categories_url.append((strip_all(job_img_element['alt']), url_video))
 
         # Sauvegarde de la liste des catérogies avec les URL associés.
-        # save_dict(retour_categories_url, chemin_fichier_cat)
+        save_dict(retour_categories_url, chemin_fichier_cat)
 
     CATEGORIES_WITH_URL = retour_categories_url
-    # print(CATEGORIES_WITH_URL)
     return [category_tuple[0] for category_tuple in retour_categories_url]
 
 
@@ -143,23 +213,21 @@ def get_video_name_from_site(content_bs):
 def get_video_url_from_site(content_bs):
     "Extraire l'URL de la vidéo"
     return_url = ''
-    # job_embed_element = content_bs.find('meta', {'property': "og:url"})
     job_embed_element = content_bs.find('iframe', {'id': "player-iframe"})
     if job_embed_element:
         return_url = verify_url_prefixe(job_embed_element['src'], URL_PREFIXE)
     return return_url
 
-# A COMPLÉTER
 def get_video_genre_from_site(content_bs):
     "Extraire le genre de la vidéo"
 
     return_genre = ''
     job_shortinfos_element = content_bs.find('div', class_="shortInfos")
     job_date_element = content_bs.find('span', class_="published")
-    job_temps_element = content_bs.find('span', class_="duration duree")
-    return_genre += 'Réalisation: ' + strip_all(job_shortinfos_element.text)
-    return_genre += ' Date: ' + strip_all(job_date_element.text)
-    # return_genre += ' Durée: ' + strip_all(job_temps_element.text)
+    if job_shortinfos_element:
+        return_genre += 'Réalisation: ' + strip_all(job_shortinfos_element.text)
+    if job_date_element:
+        return_genre += ' Date: ' + strip_all(job_date_element.text)
 
     return return_genre
 
@@ -179,106 +247,10 @@ def get_video_thumb_from_site(content_bs):
         return_thumb = job_thumb_element['href']
     return return_thumb
 
-# def get_all_sections(content_bs=None):
-    # "Extraire les sections BeautifulSoup de la page"
+def get_videos_rss(content_bs):
+    "Extraire les vidéos du fil RSS"
 
-    # if not content_bs:
-        # # url_content= urllib.request.urlopen(URL_ADRESSE).read()
-        # url_content= urlopen(URL_ADRESSE).read()
-        # liste_soup = BeautifulSoup(url_content, 'html.parser')
-    # else:
-        # liste_soup = content_bs
-
-    # list_categories = get_categories(liste_soup)
-    # job_section_elements = liste_soup.find_all("section", class_="elementor-section")
-    # for job_section_element in job_section_elements:
-        # # Vérifier si un lien URL est présent dans cette section...
-        # job_a_element = job_section_element.find("a")
-        # # Vérifier si une "sous-section" est présente dans la section...
-        # job_section_souselement = job_section_element.find("section")
-        # # Vérifier si une vidéo est présente et s'il n'y a pas de "sous-section"...
-        # if job_a_element and not job_section_souselement:
-            # title_element = job_section_element.find("h2")
-            # if title_element and strip_all(title_element.text) in list_categories:
-                # yield job_section_element
-    # return
-    # yield
-
-
-# def get_section_category(category, content_bs=None):
-    # "Extraire la section BeautifulSoup de la page de la catégorie en paramètre"
-
-    # if not content_bs:
-        # # url_content= urllib.request.urlopen(URL_ADRESSE).read()
-        # url_content= urlopen(URL_ADRESSE).read()
-        # liste_soup = BeautifulSoup(url_content, 'html.parser')
-    # else:
-        # liste_soup = content_bs
-
-    # retour_element = None
-    # job_section_elements = liste_soup.find_all("section", class_="elementor-section")
-    # if category in get_categories(liste_soup):
-        # for job_section_element in job_section_elements:
-            # # Vérifier si un lien URL est présent dans cette section...
-            # job_a_element = job_section_element.find("a", class_="elementor-post__thumbnail__link")
-            # # Vérifier si une "sous-section" est présente dans la section...
-            # job_section_souselement = job_section_element.find("section", class_="elementor-section")
-            # # Vérifier si une vidéo est présente et s'il n'y a pas de "sous-section"...
-            # if job_a_element and not job_section_souselement:
-                # title_element = job_section_element.find("h2", class_="elementor-heading-title elementor-size-default")
-                # if title_element and strip_all(title_element.text) == category:
-                    # retour_element = job_section_element
-    # return retour_element
-
-# def get_href_section(section_element):
-    # "Get URL to href element in the section element"
-
-    # if section_element != None:
-        # job_a_elements = section_element.find_all("a", class_="elementor-post__thumbnail__link")
-        # for job_a_element in job_a_elements:
-            # if job_a_element.find('img'):
-                # yield job_a_element['href']
-
-# def exists_video_section_element(section_element):
-    # "Check if exists video URL in the section element"
-
-    # retour_bool = False
-    # if section_element != None:
-        # job_a_elements = section_element.find_all("a")
-        # for job_a_element in job_a_elements:
-            # if job_a_element.find('img', {'alt': "image du film"}):
-                # retour_bool = True
-    # return retour_bool
-
-
-# def get_url_videos_site(section_element):
-    # "Get URL to video sites in the section element"
-
-    # if section_element != None:
-        # job_a_elements = section_element.find_all("a")
-        # for job_a_element in job_a_elements:
-            # if job_a_element.find('img', {'alt': "image du film"}):
-                # yield job_a_element['href']
-
-# def get_content_video_site(url):
-    # "Get content_bs containing iframe video section"
-
-    # # url_content = urllib.request.urlopen(url).read()
-    # url_content = urlopen(url).read()
-    # liste_soup = BeautifulSoup(url_content, 'html.parser')
-
-    # content_site_element = liste_soup.find("iframe")
-    # if content_site_element:
-        # yield liste_soup
-    # else:
-        # for video_site in get_url_videos_site(liste_soup):
-
-            # # url_content = urllib.request.urlopen(video_site).read()
-            # url_content = urlopen(video_site).read()
-            # liste_soup2 = BeautifulSoup(url_content, 'html.parser')
-            # content_site_element = liste_soup2.find("iframe")
-            # if content_site_element:
-                # yield liste_soup2
+    return None
 
 def get_videos(category):
     """
@@ -296,8 +268,14 @@ def get_videos(category):
     :rtype: list
     """
 
+    # Enlever le préfixe 'La Courbe' au début du nom de la catégorie
+    # titre_category = category
+    # if category[0:12] == TITRE_LA_COURBE:
+        # titre_category = category
+
     chemin_fichier_videos = get_addondir() + FICHIER_VIDEOS + hashlib.sha1(category.encode('utf-8')).hexdigest() + '.json'
     retour_videos = []
+    url_category = ''
 
     if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS):
         retour_videos = load_dict(chemin_fichier_videos)
@@ -309,75 +287,74 @@ def get_videos(category):
         # Vérifier si la variable de la liste des catégories n'est pas vide.
         if not CATEGORIES_WITH_URL:
             get_categories(liste_soup)
-        url_category = (dict(CATEGORIES_WITH_URL))[category]
-        print('URL Category: ' + url_category)
+        if category in dict(CATEGORIES_WITH_URL):
+            url_category = (dict(CATEGORIES_WITH_URL))[category]
 
-        # Chargement de la page des vidéos...
-        url_content = urlopen(url_category).read()
-        liste_soup_category = BeautifulSoup(url_content, 'html.parser')
+        # Chargement seulement l'URL existe...
+        if url_category:
 
-        # La page contient plusieurs vidéos...
-        job_a_elements = liste_soup_category.find_all("a", class_="containerScreenshot")
-        for job_a_element in job_a_elements:
+            # Chargement de la page des vidéos...
+            url_content = urlopen(url_category).read()
+            liste_soup_category = BeautifulSoup(url_content, 'html.parser')
 
-            # Chargement de la page d'une vidéo...
-            url_content = urlopen(job_a_element['href']).read()
-            liste_soup_video = BeautifulSoup(url_content, 'html.parser')
+            # La page contient plusieurs vidéos...
+            job_a_elements = liste_soup_category.find_all("a", class_="containerScreenshot")
             video_group_element = dict()
-            # job_img_element = job_a_element.find("img")
-            # video_group_element['name'] = job_img_element['alt']
-            video_group_element['name'] = get_video_name_from_site(liste_soup_video)
-            video_group_element['video'] = get_video_url_from_site(liste_soup_video)
-            video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
-            video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
-            video_group_element['description'] = get_video_description_from_site(liste_soup_video)
+            for job_a_element in job_a_elements:
 
-            retour_videos.append(video_group_element)
+                # Chargement de la page d'une vidéo...
+                if job_a_element.has_attr('href'):
+                    # url_content = urlopen(verify_url_prefixe(job_a_element['href'], URL_PREFIXE)).read()
+                    url_content = read_url(verify_url_prefixe(job_a_element['href'], URL_PREFIXE))
+                    if url_content:
+                        liste_soup_video = BeautifulSoup(url_content, 'html.parser')
+                        video_group_element['name'] = get_video_name_from_site(liste_soup_video)
+                        video_group_element['video'] = get_video_url_from_site(liste_soup_video)
+                        video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
+                        video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
+                        video_group_element['description'] = get_video_description_from_site(liste_soup_video)
 
-        # La page contient probablement qu'une seule vidéo...
-        if not job_a_elements:
-            video_group_element = dict()
-            video_group_element['name'] = get_video_name_from_site(liste_soup_category)
-            video_group_element['video'] = get_video_url_from_site(liste_soup_category)
-            video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_category)
-            video_group_element['genre'] = get_video_genre_from_site(liste_soup_category)
-            video_group_element['description'] = get_video_description_from_site(liste_soup_category)
+                        retour_videos.append(video_group_element)
 
-            retour_videos.append(video_group_element)
+            # La page ne contient pas une liste de vidéos standards...
+            # C'est le cas des vidéos de la section La Courbe...
+            if not job_a_elements:
 
-        # job_section_element = get_section_category(category, liste_soup)
+                job_a_elements2 = liste_soup_category.find_all('a')
+                for job_a_element in job_a_elements2:
+                    if job_a_element.has_attr('href'):
+                        url_href = job_a_element['href']
+                        job_img_element = job_a_element.find('img', class_="banner_image")
+                        if job_img_element and urlparse(url_href).netloc.lower() == 'www.onf.ca':
 
-        # if not exists_video_section_element(job_section_element):
-            # list_url_videos_site = []
-            # for url_section in get_href_section(job_section_element):
-                # # url_content = urllib.request.urlopen(url_section).read()
-                # url_content = urlopen(url_section).read()
-                # subsection_bs = BeautifulSoup(url_content, 'html.parser')
-                # list_videos_subsection = get_url_videos_site(subsection_bs)
-                # list_url_videos_site = list_url_videos_site + list(get_url_videos_site(subsection_bs))
-        # else:
-            # list_url_videos_site = get_url_videos_site(job_section_element)
+                            url_content = urlopen(verify_url_prefixe(url_href, URL_PREFIXE)).read()
+                            liste_soup_video = BeautifulSoup(url_content, 'html.parser')
+                            video_group_element['name'] = get_video_name_from_site(liste_soup_video)
+                            video_group_element['video'] = get_video_url_from_site(liste_soup_video)
+                            video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
+                            video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
+                            video_group_element['description'] = get_video_description_from_site(liste_soup_video)
 
-        # for video_site in list_url_videos_site:
+                            retour_videos.append(video_group_element)
 
-            # for content_site_element in get_content_video_site(video_site):
-                # video_name = get_video_name_from_site(content_site_element)
-                # video_url = get_video_url_from_site(content_site_element)
-                # video_genre = get_video_genre_from_site(content_site_element)
-                # video_description = get_video_description_from_site(content_site_element)
-                # video_thumb = get_video_thumb_from_site(content_site_element)
+                        # Il n'y a pas d'image de type "banner_image" comme dans la section La Courbe
+                        else:
 
-                # video_group_element = dict()
-                # video_group_element['name'] = video_name
-                # video_group_element['thumb'] = video_thumb
-                # video_group_element['video'] = video_url
-                # video_group_element['genre'] = video_genre
-                # video_group_element['description'] = video_description
+                            # La page contient probablement qu'un seul vidéo...
+                            video_group_element['name'] = get_video_name_from_site(liste_soup_category)
+                            video_group_element['video'] = get_video_url_from_site(liste_soup_category)
+                            video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_category)
+                            video_group_element['genre'] = get_video_genre_from_site(liste_soup_category)
+                            video_group_element['description'] = get_video_description_from_site(liste_soup_category)
 
-                # # yield video_group_element
-                # retour_videos.append(video_group_element)
+                            retour_videos.append(video_group_element)
+
+        # Enlever les répétitions...
+        # [dict(t) for t in {tuple(d.items()) for d in l}]
+        # retour_videos = list(set(retour_videos))
 
         # save_dict(retour_videos, chemin_fichier_videos)
+
     return retour_videos
 
 

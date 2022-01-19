@@ -18,7 +18,7 @@ import xbmcaddon
 
 import url_web
 
-MESSAGE_CHARGEMENT = "Chargement du menu... soyez patient!"
+MESSAGE_CHARGEMENT = "Chargement... patience! (2 min.)"
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 

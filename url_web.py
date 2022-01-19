@@ -29,6 +29,8 @@ import hashlib
 
 import re
 
+import datetime
+
 ADDON_ID = 'plugin.video.onf'
 
 URL_PREFIXE = 'https://onf.ca'
@@ -38,8 +40,8 @@ FICHIER_CATEGORIES = 'get_categories.json'
 FICHIER_VIDEOS = 'get_videos_'  # On ajoutera sha1 et .json
 FICHIER_VIDEOS_DOMAINS = 'list_url_domains.json'
 
-NOMBRE_JOURS_DELAI_CATEGORIES = 7
-NOMBRE_JOURS_DELAI_VIDEOS = 3
+NOMBRE_JOURS_DELAI_CATEGORIES = 14
+NOMBRE_JOURS_DELAI_VIDEOS = 5
 
 # Variable disponible tout au long de l'exécution du script
 CATEGORIES_WITH_URL = []
@@ -67,7 +69,8 @@ def verify_url_video_inside(url):
 
     reponse_video = False
 
-    url_content= urlopen(url).read()
+    # url_content= urlopen(url).read()
+    url_content= read_url(url)
     liste_soup = BeautifulSoup(url_content, 'html.parser')
 
     job_a_element = liste_soup.find("a", class_="containerScreenshot")
@@ -97,14 +100,15 @@ def read_url(url_text):
     try:
         url_content = urlopen(url_text).read()
     except:
-        url_content = ''
+        url_content = None
 
     return url_content
 
 def extract_themes_la_courbe(url_principal):
     "Extraire les titres de la page La Courbe de l'ONF dans une liste de tuples (titre, url)"
 
-    url_content= urlopen(url_principal).read()
+    # url_content= urlopen(url_principal).read()
+    url_content= read_url(url_principal)
     liste_soup = BeautifulSoup(url_content, 'html.parser')
 
     theme_tuple = []
@@ -144,7 +148,8 @@ def get_categories(content_bs=None):
     else:
 
         if not content_bs:
-            url_content= urlopen(URL_ADRESSE).read()
+            # url_content= urlopen(URL_ADRESSE).read()
+            url_content= read_url(URL_ADRESSE)
             liste_soup = BeautifulSoup(url_content, 'html.parser')
         else:
             liste_soup = content_bs
@@ -281,7 +286,8 @@ def get_videos(category):
         retour_videos = load_dict(chemin_fichier_videos)
     else:
 
-        url_content = urlopen(URL_ADRESSE).read()
+        # url_content = urlopen(URL_ADRESSE).read()
+        url_content = read_url(URL_ADRESSE)
         liste_soup = BeautifulSoup(url_content, 'html.parser')
 
         # Vérifier si la variable de la liste des catégories n'est pas vide.
@@ -294,13 +300,14 @@ def get_videos(category):
         if url_category:
 
             # Chargement de la page des vidéos...
-            url_content = urlopen(url_category).read()
+            # url_content = urlopen(url_category).read()
+            url_content = read_url(url_category)
             liste_soup_category = BeautifulSoup(url_content, 'html.parser')
 
             # La page contient plusieurs vidéos...
             job_a_elements = liste_soup_category.find_all("a", class_="containerScreenshot")
-            video_group_element = dict()
             for job_a_element in job_a_elements:
+                video_group_element = dict()
 
                 # Chargement de la page d'une vidéo...
                 if job_a_element.has_attr('href'):
@@ -314,6 +321,7 @@ def get_videos(category):
                         video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
                         video_group_element['description'] = get_video_description_from_site(liste_soup_video)
 
+                        print(video_group_element['name'])
                         retour_videos.append(video_group_element)
 
             # La page ne contient pas une liste de vidéos standards...
@@ -322,12 +330,14 @@ def get_videos(category):
 
                 job_a_elements2 = liste_soup_category.find_all('a')
                 for job_a_element in job_a_elements2:
+                    video_group_element = dict()
                     if job_a_element.has_attr('href'):
                         url_href = job_a_element['href']
                         job_img_element = job_a_element.find('img', class_="banner_image")
                         if job_img_element and urlparse(url_href).netloc.lower() == 'www.onf.ca':
 
-                            url_content = urlopen(verify_url_prefixe(url_href, URL_PREFIXE)).read()
+                            # url_content = urlopen(verify_url_prefixe(url_href, URL_PREFIXE)).read()
+                            url_content = read_url(verify_url_prefixe(url_href, URL_PREFIXE))
                             liste_soup_video = BeautifulSoup(url_content, 'html.parser')
                             video_group_element['name'] = get_video_name_from_site(liste_soup_video)
                             video_group_element['video'] = get_video_url_from_site(liste_soup_video)
@@ -353,7 +363,7 @@ def get_videos(category):
         # [dict(t) for t in {tuple(d.items()) for d in l}]
         # retour_videos = list(set(retour_videos))
 
-        # save_dict(retour_videos, chemin_fichier_videos)
+        save_dict(retour_videos, chemin_fichier_videos)
 
     return retour_videos
 
@@ -367,7 +377,8 @@ def convert_video_path(path_video):
     return_path = ''
 
     # Chargement de la page des vidéos...
-    url_content = urlopen(path_video).read()
+    # url_content = urlopen(path_video).read()
+    url_content = read_url(path_video)
     liste_soup_video = BeautifulSoup(url_content, 'html.parser')
 
     job_script_elements = liste_soup_video.find_all("script")
@@ -423,30 +434,54 @@ def check_file_older_than(fichier, jours):
     Verify if file is old than a certain number of days.
     If file does not exist, the answer is true.
     """
+
+    fichier_date = fichier + '.date'
+
     retour_bool = False
     if not os.path.isfile(fichier):
         retour_bool = True
     else:
-        criticalTime = arrow.now().shift(hours=+5).shift(days=-jours)
+        # criticalTime = arrow.now().shift(hours=+5).shift(days=-jours)
+        # criticalTime = arrow.utcnow().shift(hours=+5).shift(days=-jours)
+        criticalTime = arrow.utcnow().shift(days=-jours)
         # if os.stat(f).st_mtime < now - 7 * 86400:
-        itemTime = arrow.get(os.stat(fichier).st_mtime)
-        if itemTime < criticalTime:
+        # itemTime = arrow.get(os.stat(fichier).st_mtime)
+        try:
+            file_date = open(fichier_date, 'r')
+        except IOError:
             retour_bool = True
+            return retour_bool
+        finally:
+            # itemTime = datetime.datetime.strptime(file_date.read(), "%d-%b-%Y (%H:%M:%S.%f)")
+            itemTime = datetime.datetime.strptime(file_date.read(), "%Y-%m-%dT%H:%M:%S%z")
+
+            # print('Temps du fichier: ' + str(itemTime))
+            # print('Maintenant: ' + str(datetime.datetime.utcnow()))
+            # print('criticalTime: ' + str(criticalTime))
+            if itemTime < criticalTime:
+                retour_bool = True
+            file_date.close()
     return retour_bool
 
 def save_dict(data_dict, fichier):
     """
     Save data structure dict in a file.
     """
+    fichier_date = fichier + '.date'
     retour_reussite = True
     try:
         file = open(fichier, 'w')
+        file_date = open(fichier_date, 'w')
     except IOError:
         retour_reussite = False
         return retour_reussite
     finally:
         file.write(json.dumps(data_dict, indent=4))
+        # file_date.write(datetime.datetime.utcnow().strftime("%d-%b-%Y (%H:%M:%S.%f)"))
+        # file_date.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S%z"))
+        file_date.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S-0000"))
         file.close()
+        file_date.close()
         return retour_reussite
 
 def load_dict(fichier):
@@ -485,8 +520,8 @@ def get_list_search_results(keywordsearch):
         href_element  = job_h2_element.find("a", {'rel': "bookmark"})
 
         # On récupère le contenu de la page de la vidéo...
-        # url_content= urllib.request.urlopen(href_element['href']).read()
-        url_content= urlopen(href_element['href']).read()
+        # url_content= urlopen(href_element['href']).read()
+        url_content= read_url(href_element['href'])
         content_site_video_bs = BeautifulSoup(url_content, 'html.parser')
 
         video_name = get_video_name_from_site(content_site_video_bs)

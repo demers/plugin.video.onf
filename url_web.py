@@ -21,7 +21,7 @@ import os.path
 # Import libraries to analyse Web pages
 from bs4 import BeautifulSoup
 
-import arrow
+# import arrow
 import os
 
 import json
@@ -30,6 +30,8 @@ import hashlib
 import re
 
 import datetime
+
+import random
 
 ADDON_ID = 'plugin.video.onf'
 
@@ -40,8 +42,9 @@ FICHIER_CATEGORIES = 'get_categories.json'
 FICHIER_VIDEOS = 'get_videos_'  # On ajoutera sha1 et .json
 FICHIER_VIDEOS_DOMAINS = 'list_url_domains.json'
 
+# Nombre de jours maximum pour le chargement
 NOMBRE_JOURS_DELAI_CATEGORIES = 14
-NOMBRE_JOURS_DELAI_VIDEOS = 5
+NOMBRE_JOURS_DELAI_VIDEOS = 10
 
 # Les pages contenant le mot 'interactif' ne contiennent pas de vidéos...
 URL_A_ENLEVER = [ 'interactif' ]
@@ -62,6 +65,10 @@ def strip_all(chaine):
     Remove spaces char beginning and end of string.
     """
     return chaine.replace('\t', '').replace('\n', '').replace('\r', '').strip(' ')
+
+def get_random_day(max_days):
+    "Calcul le nombre de jours maximum au hasard"
+    return random.randint(1, max_days)
 
 def verify_url_prefixe(chaine_url, prefixe_url):
     "Ajouter domaine http au début si non présent"
@@ -311,7 +318,9 @@ def get_videos(category):
     retour_videos = []
     url_category = ''
 
-    if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS):
+    # On vérifie si le fichier est plus vieux qu'un nombre de jours entre 1 et NOMBRE_JOURS_DELAI_VIDEOS
+    if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, False):
+    # if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
         retour_videos = load_dict(chemin_fichier_videos)
     else:
 
@@ -481,55 +490,38 @@ def get_addondir():
 
     return reponse
 
-def check_file_older_than(fichier, jours):
+def check_file_older_than(fichier, jours_max, hasard_actif=False):
     """
-    Verify if file is old than a certain number of days.
+    Verify if file is old than a certain number of days jours_max.
     If file does not exist, the answer is true.
+    If hasard_actif, le number of days is between 1 and jours_max
     """
 
     fichier_date = fichier + '.date'
+
+    if hasard_actif:
+        jours = get_random_day(jours_max)
+    else:
+        jours = jours_max
 
     retour_bool = False
     if not (os.path.isfile(fichier) or os.path.isfile(fichier_date)):
         retour_bool = True
     else:
-        # criticalTime = arrow.now().shift(hours=+5).shift(days=-jours)
-        # criticalTime = arrow.utcnow().shift(days=-jours)
-        # criticalTime = arrow.utcnow().shift(hours=+5).shift(days=-jours)
-        # criticalTime = arrow.utcnow().shift(days=-jours)
-        # if os.stat(f).st_mtime < now - 7 * 86400:
-        # itemTime = arrow.get(os.stat(fichier).st_mtime)
         criticalTime = datetime.datetime.today() - datetime.timedelta(days=jours)
         try:
             file_date = open(fichier_date, 'r')
         except IOError:
-
             return retour_bool
+
         finally:
-            # itemTime = datetime.datetime.strptime(file_date.read(), "%d-%b-%Y (%H:%M:%S.%f)")
-            # itemTime = datetime.datetime.strptime(file_date.read(), "%Y-%m-%dT%H:%M:%S%z")
-            # content_time = strip_all(file_date.read())
-            # content_time = (strip_all(file_date.read()))[0:10]
             content_time = strip_all(file_date.read())
-            # itemTime = datetime.datetime.strptime(content_time, "%Y-%m-%dT%H:%M:%S%z")
             try:
-                # itemTime = datetime.datetime.strptime(content_time, "%Y-%m-%dT%H:%M:%S%z")
-                # itemTime = datetime.datetime.strptime(content_time, "%Y-%m-%dT%H:%M:%S")
                 itemTime = datetime.datetime.strptime(content_time, "%Y-%m-%d")
             except TypeError:
-                # itemTime = datetime.datetime(*(time.strptime(content_time, "%Y-%m-%dT%H:%M:%S%z")[0:6]))
-                # itemTime = datetime.datetime(*(time.strptime(content_time, "%Y-%m-%dT%H:%M:%S%z")))
-                # refdatim = datetime.fromtimestamp(time.mktime(time.strptime(s, '%Y%m%d %H%M%S')))
                 import time
-                # import calendar
-                # itemTime = datetime.fromtimestamp(time.mktime(time.strptime(content_time, "%Y-%m-%dT%H:%M:%S%z")))
-                # itemTime = datetime.datetime.utcfromtimestamp(time.mktime(time.strptime(content_time, "%Y-%m-%dT%H:%M:%S")))
-                # itemTime = datetime.datetime.utcfromtimestamp(time.mktime(time.strptime(content_time, "%Y-%m-%d")))
                 itemTime = datetime.datetime.fromtimestamp(time.mktime(time.strptime(content_time, "%Y-%m-%d")))
-                # itemTime = datetime.datetime.utcfromtimestamp(calendar.timegm(time.strptime(content_time, "%Y-%m-%dT%H:%M:%S%z")))
-            # print('Temps du fichier: ' + str(itemTime))
-            # print('Maintenant: ' + str(datetime.datetime.utcnow()))
-            # print('criticalTime: ' + str(criticalTime))
+
             if itemTime < criticalTime:
                 retour_bool = True
             file_date.close()
@@ -549,10 +541,6 @@ def save_dict(data_dict, fichier):
         return retour_reussite
     finally:
         file.write(json.dumps(data_dict, indent=4))
-        # file_date.write(datetime.datetime.utcnow().strftime("%d-%b-%Y (%H:%M:%S.%f)"))
-        # file_date.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S%z"))
-        # file_date.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S-0000"))
-        # file_date.write(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         file_date.write(datetime.datetime.now().strftime("%Y-%m-%d"))
         file.close()
         file_date.close()

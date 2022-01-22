@@ -2,10 +2,10 @@
 # Module: main
 # Author: Roman V. M. and modified by Francois-N. Demers
 # Created on: 28.11.2014
-# Modified on: 1.1.2022 by adding use of script.module.routing and config
+# Modified on: 14.09.2021 by adding use of script.module.routing and config
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 """
-Video plugin that is compatible with Kodi 19.x "Matrix" and above
+Example video plugin that is compatible with Kodi 19.x "Matrix" and above
 """
 
 import sys
@@ -17,8 +17,9 @@ import xbmc
 import xbmcaddon
 
 import url_web
+from bs4 import BeautifulSoup
 
-MESSAGE_CHARGEMENT = "Chargement... (10 min. max.)"
+MESSAGE_CHARGEMENT = "Chargement du menu... soyez patient!"
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 
@@ -36,6 +37,7 @@ def play_video(path):
     :param path: Fully-qualified video URL
     :type path: str
     """
+
     # Create a playable item with a path to play.
     play_item = xbmcgui.ListItem(path=path)
 
@@ -46,10 +48,13 @@ def play_video(path):
 @plugin.route('/')
 def index():
     categories = url_web.get_categories()
-    xbmcplugin.setPluginCategory(plugin.handle, 'Vidéos ONF/NFB')
+    xbmcplugin.setPluginCategory(plugin.handle, 'Vidéos Horscine.org')
     xbmcplugin.setContent(plugin.handle, 'videos')
 
+    # query_input = get_user_input()
+    # url = plugin.url_for(search, query=query_input)
     url = plugin.url_for(search)
+    # url = plugin.url_for(search, query="hello world")
     xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
 
     __addon__ = xbmcaddon.Addon()
@@ -114,7 +119,6 @@ def get_user_input():
     query = kb.getText() # User input
     return query
 
-# EN COMMENTAIRE POUR CACHER CET OPTION...
 @plugin.route('/search')
 def search():
     query_result = get_user_input()
@@ -223,10 +227,12 @@ def route_play_category_video(category_number, video_number):
     else:
         video_identified = videos[int(video_number)]
 
+    xbmc.log('FND video: ' + video_identified['video'])
 
     # Use function convert_video_path to get exact path string.
-    xbmc.log(video_identified['video'])
     exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
+
+    xbmc.log('FND video 2: ' + exact_video_path_to_play)
 
     # If the URL is not changed...
     if url_web.convert_video_path(video_identified['video']) == video_identified['video']:
@@ -238,6 +244,7 @@ def route_play_category_video(category_number, video_number):
 
         # https://kodi.wiki/view/GUI_tutorial
         xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
+
 
     play_video(exact_video_path_to_play)
 

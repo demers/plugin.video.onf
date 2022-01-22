@@ -18,7 +18,10 @@ import xbmcaddon
 
 import url_web
 
-MESSAGE_CHARGEMENT = "Chargement... (10 min. max.)"
+if url_web.verify_exist_config():
+    MESSAGE_CHARGEMENT = "Chargement... (1 min.)"
+else:
+    MESSAGE_CHARGEMENT = "Configuration initiale... (12 min. max.)"
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 
@@ -49,14 +52,16 @@ def index():
     xbmcplugin.setPluginCategory(plugin.handle, 'Vidéos ONF/NFB')
     xbmcplugin.setContent(plugin.handle, 'videos')
 
-    url = plugin.url_for(search)
-    xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
+    # A réactiver quand la recherche fonctionnera...
+    # url = plugin.url_for(search)
+    # xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
+
 
     __addon__ = xbmcaddon.Addon()
     __addonname__ = __addon__.getAddonInfo('name')
     __icon__ = __addon__.getAddonInfo('icon')
     line_notification = MESSAGE_CHARGEMENT
-    time = 5000 #in miliseconds
+    time = 10000 #in miliseconds
     # https://kodi.wiki/view/GUI_tutorial
     xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
 
@@ -67,7 +72,10 @@ def index():
         if url_web.is_iterator(videos):
             video_item = next(videos)
         else:
-            video_item = videos[0]
+            if videos:
+                video_item = videos[0]
+            else:
+                continue
 
         # Create a list item with a text label and a thumbnail image.
         list_item = xbmcgui.ListItem(label=category)
@@ -115,7 +123,7 @@ def get_user_input():
     return query
 
 # EN COMMENTAIRE POUR CACHER CET OPTION...
-@plugin.route('/search')
+# @plugin.route('/search')
 def search():
     query_result = get_user_input()
 
@@ -223,23 +231,21 @@ def route_play_category_video(category_number, video_number):
     else:
         video_identified = videos[int(video_number)]
 
-    xbmc.log('FND video: ' + video_identified['video'])
-
-    # Use function convert_video_path to get exact path string.
-    exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
+    # exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
+    exact_video_path_to_play = video_identified['video']
 
     xbmc.log('FND video 2: ' + exact_video_path_to_play)
 
-    # If the URL is not changed...
-    if url_web.convert_video_path(video_identified['video']) == video_identified['video']:
-        __addon__ = xbmcaddon.Addon()
-        __addonname__ = __addon__.getAddonInfo('name')
-        __icon__ = __addon__.getAddonInfo('icon')
-        line_notification = MESSAGE_ERREUR_VIDEO
-        time = 5000 #in miliseconds
+    # # If the URL is not changed...
+    # if url_web.convert_video_path(video_identified['video']) == video_identified['video']:
+        # __addon__ = xbmcaddon.Addon()
+        # __addonname__ = __addon__.getAddonInfo('name')
+        # __icon__ = __addon__.getAddonInfo('icon')
+        # line_notification = MESSAGE_ERREUR_VIDEO
+        # time = 5000 #in miliseconds
 
-        # https://kodi.wiki/view/GUI_tutorial
-        xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
+        # # https://kodi.wiki/view/GUI_tutorial
+        # xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
 
     play_video(exact_video_path_to_play)
 

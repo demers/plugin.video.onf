@@ -243,7 +243,9 @@ def get_video_url_from_site(content_bs):
     job_embed_element = content_bs.find('iframe', {'id': "player-iframe"})
     if job_embed_element:
         return_url = verify_url_prefixe(job_embed_element['src'], URL_PREFIXE)
-    return return_url
+
+    # Conversion finale de l'URL de la vidéo...
+    return convert_video_path(return_url)
 
 def get_video_genre_from_site(content_bs):
     "Extraire le genre de la vidéo"
@@ -372,7 +374,6 @@ def get_videos(category):
 
                     # Chargement de la page d'une vidéo...
                     if job_a_element.has_attr('href'):
-                        # ******** A ENLEVER *************
                         url_content = read_url(verify_url_prefixe(job_a_element['href'], URL_PREFIXE))
                         if url_content:
                             liste_soup_video = BeautifulSoup(url_content, 'html.parser')
@@ -560,6 +561,20 @@ def load_dict(fichier):
         struct_dict = json.loads(file.read())
         file.close()
         return struct_dict
+
+def verify_exist_config():
+    "Vérifier si le fichier de configuration de base existe dans Kodi"
+
+    chemin_fichier_cat = get_addondir() + FICHIER_CATEGORIES
+
+    fichier_exist = False
+    try:
+        fichier_exist = os.path.isfile(chemin_fichier_cat)
+
+    except IOError:
+        pass
+
+    return fichier_exist
 
 # def search_test():
 

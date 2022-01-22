@@ -318,9 +318,9 @@ def get_videos(category):
     retour_videos = []
     url_category = ''
 
-    # On vérifie si le fichier est plus vieux qu'un nombre de jours entre 1 et NOMBRE_JOURS_DELAI_VIDEOS
-    if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, False):
-    # if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
+    # On vérifie si le fichier est plus vieux qu'un nombre de jours au hasard entre 1 et NOMBRE_JOURS_DELAI_VIDEOS
+    # if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, False):
+    if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
         retour_videos = load_dict(chemin_fichier_videos)
     else:
 
@@ -505,7 +505,7 @@ def check_file_older_than(fichier, jours_max, hasard_actif=False):
         jours = jours_max
 
     retour_bool = False
-    if not (os.path.isfile(fichier) or os.path.isfile(fichier_date)):
+    if not (os.path.isfile(fichier) and os.path.isfile(fichier_date)):
         retour_bool = True
     else:
         criticalTime = datetime.datetime.today() - datetime.timedelta(days=jours)

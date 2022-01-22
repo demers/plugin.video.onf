@@ -18,7 +18,7 @@ import xbmcaddon
 
 import url_web
 
-MESSAGE_CHARGEMENT = "Chargement... patience! (2 min.)"
+MESSAGE_CHARGEMENT = "Chargement... (10 min. max.)"
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 
@@ -49,10 +49,7 @@ def index():
     xbmcplugin.setPluginCategory(plugin.handle, 'Vidéos ONF/NFB')
     xbmcplugin.setContent(plugin.handle, 'videos')
 
-    # query_input = get_user_input()
-    # url = plugin.url_for(search, query=query_input)
     url = plugin.url_for(search)
-    # url = plugin.url_for(search, query="hello world")
     xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
 
     __addon__ = xbmcaddon.Addon()
@@ -117,6 +114,7 @@ def get_user_input():
     query = kb.getText() # User input
     return query
 
+# EN COMMENTAIRE POUR CACHER CET OPTION...
 @plugin.route('/search')
 def search():
     query_result = get_user_input()
@@ -227,6 +225,7 @@ def route_play_category_video(category_number, video_number):
 
 
     # Use function convert_video_path to get exact path string.
+    xbmc.log(video_identified['video'])
     exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
 
     # If the URL is not changed...

@@ -2,7 +2,7 @@
 # Module: main
 # Author: Roman V. M. and modified by Francois-N. Demers
 # Created on: 28.11.2014
-# Modified on: 1.1.2022 by adding use of script.module.routing and config
+# Modified on: 22.1.2022 by adding use of script.module.routing and config
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 """
 Video plugin that is compatible with Kodi 19.x "Matrix" and above
@@ -18,6 +18,7 @@ import xbmcaddon
 
 import url_web
 
+# MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 12 min. max.)"
 if url_web.verify_exist_config():
     MESSAGE_CHARGEMENT = "Chargement... (1 min.)"
 else:
@@ -174,7 +175,8 @@ def show_category(category_number):
 
     # Set plugin category. It is displayed in some skins as the name
     # of the current section.
-    category_id = list(url_web.get_categories())[int(category_number)]
+    # category_id = list(url_web.get_categories())[int(category_number)]
+    category_id = (url_web.get_categories())[int(category_number)]
     xbmcplugin.setPluginCategory(plugin.handle, category_id)
     # Set plugin content. It allows Kodi to select appropriate views
     # for this type of content.
@@ -231,10 +233,8 @@ def route_play_category_video(category_number, video_number):
     else:
         video_identified = videos[int(video_number)]
 
-    # exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
-    exact_video_path_to_play = video_identified['video']
-
-    xbmc.log('FND video 2: ' + exact_video_path_to_play)
+    exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
+    # exact_video_path_to_play = video_identified['video']
 
     # # If the URL is not changed...
     # if url_web.convert_video_path(video_identified['video']) == video_identified['video']:
@@ -256,6 +256,7 @@ def route_play_video():
     # Use function convert_video_path to get exact path string.
     exact_video_path_to_play = url_web.convert_video_path(video_url)
     play_video(exact_video_path_to_play)
+    # play_video(video_url)
 
 if __name__ == '__main__':
     plugin.run()

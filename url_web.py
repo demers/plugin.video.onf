@@ -21,7 +21,6 @@ import os.path
 # Import libraries to analyse Web pages
 from bs4 import BeautifulSoup
 
-# import arrow
 import os
 
 import json
@@ -245,7 +244,8 @@ def get_video_url_from_site(content_bs):
         return_url = verify_url_prefixe(job_embed_element['src'], URL_PREFIXE)
 
     # Conversion finale de l'URL de la vidéo...
-    return convert_video_path(return_url)
+    # return convert_video_path(return_url)
+    return return_url
 
 def get_video_genre_from_site(content_bs):
     "Extraire le genre de la vidéo"
@@ -441,14 +441,21 @@ def convert_video_path(path_video):
     # Chargement de la page des vidéos...
     # url_content = urlopen(path_video).read()
     url_content = read_url(path_video)
-    liste_soup_video = BeautifulSoup(url_content, 'html.parser')
+    # liste_soup_video = BeautifulSoup(url_content, 'html.parser')
+    # job_script_elements = liste_soup_video.find_all("script")
+    # for job_script_element in job_script_elements:
+        # # re.search(r'meta\s*=\s*(.*?}])\s*\n', job_script_element.text)
+        # resultat_search = re.search(r"source\s*:\s*'(.*)'", job_script_element.text)
+        # if resultat_search:
+            # return_path = resultat_search[1]
+    if isinstance(url_content, (bytes, bytearray)):
+        url_content_str = url_content.decode()
+    else:
+        url_content_str = url_content
 
-    job_script_elements = liste_soup_video.find_all("script")
-    for job_script_element in job_script_elements:
-        # re.search(r'meta\s*=\s*(.*?}])\s*\n', job_script_element.text)
-        resultat_search = re.search(r"source\s*:\s*'(.*)'", job_script_element.text)
-        if resultat_search:
-            return_path = resultat_search[1]
+    resultat_search = re.search(r"source\s*:\s*'(.*)'", url_content_str)
+    if resultat_search:
+        return_path = resultat_search[1]
 
     return return_path
 
@@ -490,6 +497,20 @@ def get_addondir():
         os.mkdir(reponse)
 
     return reponse
+
+def verify_exist_config():
+    "Vérifier si le fichier de configuration de base existe dans Kodi"
+
+    chemin_fichier_cat = get_addondir() + FICHIER_CATEGORIES
+
+    fichier_exist = False
+    try:
+        fichier_exist = os.path.isfile(chemin_fichier_cat)
+
+    except IOError:
+        pass
+
+    return fichier_exist
 
 def check_file_older_than(fichier, jours_max, hasard_actif=False):
     """
@@ -541,6 +562,7 @@ def save_dict(data_dict, fichier):
         retour_reussite = False
         return retour_reussite
     finally:
+        # file.write(json.dumps(data_dict, ensure_ascii=True))
         file.write(json.dumps(data_dict, indent=4))
         file_date.write(datetime.datetime.now().strftime("%Y-%m-%d"))
         file.close()
@@ -562,19 +584,6 @@ def load_dict(fichier):
         file.close()
         return struct_dict
 
-def verify_exist_config():
-    "Vérifier si le fichier de configuration de base existe dans Kodi"
-
-    chemin_fichier_cat = get_addondir() + FICHIER_CATEGORIES
-
-    fichier_exist = False
-    try:
-        fichier_exist = os.path.isfile(chemin_fichier_cat)
-
-    except IOError:
-        pass
-
-    return fichier_exist
 
 # def search_test():
 

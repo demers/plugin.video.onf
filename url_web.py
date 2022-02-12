@@ -37,6 +37,8 @@ ADDON_ID = 'plugin.video.onf'
 URL_PREFIXE = 'https://onf.ca'
 URL_ADRESSE = URL_PREFIXE + '/index.php'
 
+URL_CACHE = 'http://cache.org'
+
 FICHIER_CATEGORIES = 'get_categories.json'
 FICHIER_VIDEOS = 'get_videos_'  # On ajoutera sha1 et .json
 FICHIER_VIDEOS_DOMAINS = 'list_url_domains.json'
@@ -137,7 +139,7 @@ def extract_themes_la_courbe(url_principal):
 
     return theme_tuple
 
-def get_categories(content_bs=None):
+def get_categories(content_bs=None, cache_ok=True):
     """
     Get the list of video categories.
 
@@ -145,7 +147,7 @@ def get_categories(content_bs=None):
     the list of video categories (e.g. 'Movies', 'TV-shows', 'Documentaries' etc.)
     from some site or API.
 
-    .. note:: Consider using `generator functions <https://wiki.python.org/moin/Generators>`_
+    note:: Consider using `generator functions <https://wiki.python.org/moin/Generators>`_
         instead of returning lists.
 
     :return: The list of video categories
@@ -158,12 +160,17 @@ def get_categories(content_bs=None):
     chemin_fichier_cat = get_addondir() + FICHIER_CATEGORIES
 
     retour_categories_url = []
-    if not check_file_older_than(chemin_fichier_cat, NOMBRE_JOURS_DELAI_CATEGORIES):
+
+    # On vérifie si peut obtenir le cache global...
+    if cache_ok and check_cache():
+        retour_categories_url = get_cache_categories()
+    # Sinon, vérifie les fichiers locaux...
+    elif cache_ok and not check_file_older_than(chemin_fichier_cat, NOMBRE_JOURS_DELAI_CATEGORIES):
         retour_categories_url = load_dict(chemin_fichier_cat)
+    # Sinon, recharge tout.
     else:
 
         if not content_bs:
-            # url_content= urlopen(URL_ADRESSE).read()
             url_content= read_url(URL_ADRESSE)
             liste_soup = BeautifulSoup(url_content, 'html.parser')
         else:
@@ -177,8 +184,6 @@ def get_categories(content_bs=None):
                 url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
                 if verify_url_video_inside(url_video):
                     retour_categories_url.append((strip_all(job_h2_element.text), url_video))
-                # retour_categories_url.append((strip_all(job_h2_element.text),
-                                        # verify_url_prefixe(job_a_element['href'], URL_PREFIXE)))
 
         # Recherche des sections avec carroussel dans la page.
         job_h2_elements = liste_soup.find_all("h2", class_="h3")
@@ -300,7 +305,7 @@ def append_video(video_element, liste_videos):
         liste_videos.append(video_element)
 
 
-def get_videos(category):
+def get_videos(category, cache_ok=True):
     """
     Get the list of videofiles/streams.
 
@@ -320,9 +325,12 @@ def get_videos(category):
     retour_videos = []
     url_category = ''
 
+    # On vérifie si peut obtenir le cache global...
+    if cache_ok and check_cache():
+        retour_videos = get_cache_videos(category)
+    # Sinon, vérifie les fichiers locaux...
     # On vérifie si le fichier est plus vieux qu'un nombre de jours au hasard entre 1 et NOMBRE_JOURS_DELAI_VIDEOS
-    # if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, False):
-    if not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
+    if cache_ok and not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
         retour_videos = load_dict(chemin_fichier_videos)
     else:
 
@@ -360,8 +368,6 @@ def get_videos(category):
                             video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
                             video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
                             video_group_element['description'] = get_video_description_from_site(liste_soup_video)
-                            # if video_group_element['name']:
-                                # retour_videos.append(video_group_element)
                             append_video(video_group_element, retour_videos)
 
             else:
@@ -383,8 +389,6 @@ def get_videos(category):
                             video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
                             video_group_element['description'] = get_video_description_from_site(liste_soup_video)
 
-                            # if video_group_element['name']:
-                                # retour_videos.append(video_group_element)
                             append_video(video_group_element, retour_videos)
 
                 # La page ne contient pas une liste de vidéos standards...
@@ -400,7 +404,6 @@ def get_videos(category):
                             job_img_element = job_a_element.find('img', class_="banner_image")
                             if job_img_element and urlparse(url_href).netloc.lower() == 'www.onf.ca':
 
-                                # url_content = urlopen(verify_url_prefixe(url_href, URL_PREFIXE)).read()
                                 url_content = read_url(verify_url_prefixe(url_href, URL_PREFIXE))
                                 liste_soup_video = BeautifulSoup(url_content, 'html.parser')
                                 video_group_element['name'] = get_video_name_from_site(liste_soup_video)
@@ -409,7 +412,6 @@ def get_videos(category):
                                 video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
                                 video_group_element['description'] = get_video_description_from_site(liste_soup_video)
 
-                                # retour_videos.append(video_group_element)
                                 append_video(video_group_element, retour_videos)
 
                             # Il n'y a pas d'image de type "banner_image" comme dans la section La Courbe
@@ -422,12 +424,46 @@ def get_videos(category):
                                 video_group_element['genre'] = get_video_genre_from_site(liste_soup_category)
                                 video_group_element['description'] = get_video_description_from_site(liste_soup_category)
 
-                                # retour_videos.append(video_group_element)
                                 append_video(video_group_element, retour_videos)
 
         save_dict(retour_videos, chemin_fichier_videos)
 
     return retour_videos
+
+def check_cache():
+    """
+    On vérifie le cache est disponible sur Internet
+    """
+    pass
+
+def get_cache_categories():
+    """
+    On retire le cache des catégories
+    """
+    pass
+
+def get_cache_videos(category):
+    """
+    On retire le cache d'une catégorie en particulier
+    """
+    pass
+
+def update_cache():
+    """
+    Script qui met à jour le cache
+    """
+    struct_dict = dict()
+    date_actuelle = datetime.datetime.now().strftime("%Y-%m-%d")
+    struct_dict['now'] = date_actuelle
+    # struct_dict['categories'] = get_categories(None, False)
+    struct_dict['categories'] = get_categories(None, True)
+    for category in struct_dict['categories']:
+        # struct_dict[category] = get_videos(category, False)
+        print(category)
+        struct_dict[category] = get_videos(category, True)
+
+    return json.dumps(struct_dict, indent=4)
+
 
 
 def convert_video_path(path_video):
@@ -439,15 +475,8 @@ def convert_video_path(path_video):
     return_path = ''
 
     # Chargement de la page des vidéos...
-    # url_content = urlopen(path_video).read()
     url_content = read_url(path_video)
-    # liste_soup_video = BeautifulSoup(url_content, 'html.parser')
-    # job_script_elements = liste_soup_video.find_all("script")
-    # for job_script_element in job_script_elements:
-        # # re.search(r'meta\s*=\s*(.*?}])\s*\n', job_script_element.text)
-        # resultat_search = re.search(r"source\s*:\s*'(.*)'", job_script_element.text)
-        # if resultat_search:
-            # return_path = resultat_search[1]
+
     if isinstance(url_content, (bytes, bytearray)):
         url_content_str = url_content.decode()
     else:
@@ -478,7 +507,7 @@ def get_addondir():
     Get addon dir with standard functions.
     """
     # Ça devrait donner ce chemin:
-    #   /home/ubuntu/.kodi/userdata/addon_data/plugin.video.horscine/
+    #   /home/ubuntu/.kodi/userdata/addon_data/plugin.video.onf/
 
     try:
         import xbmc
@@ -562,7 +591,6 @@ def save_dict(data_dict, fichier):
         retour_reussite = False
         return retour_reussite
     finally:
-        # file.write(json.dumps(data_dict, ensure_ascii=True))
         file.write(json.dumps(data_dict, indent=4))
         file_date.write(datetime.datetime.now().strftime("%Y-%m-%d"))
         file.close()

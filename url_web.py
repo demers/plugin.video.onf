@@ -68,6 +68,7 @@ RSS_TEXTE = 'Ajouts récents (RSS)'
 # Variable disponible tout au long de l'exécution du script
 CATEGORIES_WITH_URL = []
 
+NB_PAGES_RECHERCHE = 4
 
 def strip_all(chaine):
     """
@@ -600,16 +601,6 @@ def load_dict(fichier):
         return struct_dict
 
 
-# def search_test():
-
-    # NOUV_URL_ADRESSE = URL_PREFIXE + '/recherche/' + '?q=' + 'manger' + '&cat=films'
-    # # from selenium import webdriver
-    # # driver = webdriver.PhantomJS()
-    # # driver.get(NOUV_URL_ADRESSE)
-    # # print(driver.page_source)
-
-
-
 def get_list_search_results(keywordsearch):
     """
     Generate list results
@@ -618,7 +609,7 @@ def get_list_search_results(keywordsearch):
     # https://services.nfb.ca/api/search/v4/films/?q=tes&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page=1
     NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + keywordsearch + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
 
-    for nombre in range(10):
+    for nombre in range(NB_PAGES_RECHERCHE):
         page = nombre + 1
         url_content= read_url(NOUV_URL_ADRESSE + str(page))
         content_json = json.loads(url_content)

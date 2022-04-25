@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.onf"
-version="0.0.2"
+version="0.1.0"
 name="ONF.ca"
 provider-name="fndemers">
 <requires>
@@ -8,7 +8,6 @@ provider-name="fndemers">
     <import addon="script.module.routing" version="0.2.3"/>
     <import addon="script.module.beautifulsoup4" version="4.6.2"/>
     <import addon="script.module.html5lib" version="0.999.0"/>
-    <!--<import addon="script.module.js2py" version="0.6.6"/>-->
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
   <provides>video</provides>

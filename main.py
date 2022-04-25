@@ -20,9 +20,9 @@ import url_web
 
 # MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 12 min. max.)"
 if url_web.verify_exist_config():
-    MESSAGE_CHARGEMENT = "Chargement... (1 min.)"
+    MESSAGE_CHARGEMENT = "Chargement... (2 min.)"
 else:
-    MESSAGE_CHARGEMENT = "Configuration initiale... (12 min. max.)"
+    MESSAGE_CHARGEMENT = "Configuration initiale... (40 min. max.)"
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 
@@ -54,8 +54,8 @@ def index():
     xbmcplugin.setContent(plugin.handle, 'videos')
 
     # A réactiver quand la recherche fonctionnera...
-    # url = plugin.url_for(search)
-    # xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
+    url = plugin.url_for(search)
+    xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
 
 
     __addon__ = xbmcaddon.Addon()
@@ -124,7 +124,7 @@ def get_user_input():
     return query
 
 # EN COMMENTAIRE POUR CACHER CET OPTION...
-# @plugin.route('/search')
+@plugin.route('/search')
 def search():
     query_result = get_user_input()
 

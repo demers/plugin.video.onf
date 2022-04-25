@@ -388,7 +388,8 @@ def get_videos(category, cache_ok=True):
     # Sinon, vérifie les fichiers locaux...
     # On vérifie si le fichier est plus vieux qu'un nombre de jours au hasard entre 1 et NOMBRE_JOURS_DELAI_VIDEOS
     # On vérifie si la catégorie n'est pas le lien RSS.
-    if cache_ok and category != RSS_TEXTE and not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
+    # if cache_ok and category != RSS_TEXTE and not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
+    if cache_ok and not check_file_older_than(chemin_fichier_videos, NOMBRE_JOURS_DELAI_VIDEOS, True):
         retour_videos = load_dict(chemin_fichier_videos)
     else:
 
@@ -448,41 +449,6 @@ def get_videos(category, cache_ok=True):
 
                             append_video(video_group_element, retour_videos)
 
-                # La page ne contient pas une liste de vidéos standards...
-                # C'est le cas des vidéos de la section La Courbe...
-                # if not job_a_elements:
-
-                    # job_a_elements2 = liste_soup_category.find_all('a')
-                    # for job_a_element in job_a_elements2:
-                        # video_group_element = dict()
-                        # if job_a_element.has_attr('href'):
-                            # url_href = job_a_element['href']
-                            # # On cherche une image de type banner_image comme la section La Courbe...
-                            # job_img_element = job_a_element.find('img', class_="banner_image")
-                            # if job_img_element and urlparse(url_href).netloc.lower() == 'www.onf.ca':
-
-                                # url_content = read_url(verify_url_prefixe(url_href, URL_PREFIXE))
-                                # liste_soup_video = BeautifulSoup(url_content, 'html.parser')
-                                # video_group_element['name'] = get_video_name_from_site(liste_soup_video)
-                                # video_group_element['video'] = get_video_url_from_site(liste_soup_video)
-                                # video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
-                                # video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
-                                # video_group_element['description'] = get_video_description_from_site(liste_soup_video)
-
-                                # append_video(video_group_element, retour_videos)
-
-                            # # Il n'y a pas d'image de type "banner_image" comme dans la section La Courbe
-                            # else:
-
-                                # # La page contient probablement qu'un seul vidéo...
-                                # video_group_element['name'] = get_video_name_from_site(liste_soup_category)
-                                # video_group_element['video'] = get_video_url_from_site(liste_soup_category)
-                                # video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_category)
-                                # video_group_element['genre'] = get_video_genre_from_site(liste_soup_category)
-                                # video_group_element['description'] = get_video_description_from_site(liste_soup_category)
-
-                                # append_video(video_group_element, retour_videos)
-
         save_dict(retour_videos, chemin_fichier_videos)
 
     return retour_videos
@@ -528,7 +494,7 @@ def get_addondir():
     Get addon dir with standard functions.
     """
     # Ça devrait donner ce chemin:
-    #   /home/ubuntu/.kodi/userdata/addon_data/plugin.video.onf/
+    #   /home/*user*/.kodi/userdata/addon_data/plugin.video.onf/
 
     try:
         import xbmc
@@ -663,6 +629,6 @@ def get_list_search_results(keywordsearch):
                     video_group_element['name'] = item['title']
                     video_group_element['thumb'] = 'https://dkyhanv6paotz.cloudfront.net/live/fit-in/704x396/medias/nfb_tube/' + item['thumbnail_path']
                     video_group_element['video'] = get_video_url_from_site(None, 'https://www.onf.ca/film/' + item['slug'])
-                    video_group_element['genre'] = item['directors'][0]['name'] + ', ' + item['time'] + ', ' + str(item['year'])
+                    video_group_element['genre'] = item['directors'][0]['name'] + ', ' + item['time'] + ', ' + str(item['year']) if item['directors'] else item['time'] + ', ' + str(item['year'])
                     video_group_element['description'] = item['description']['fr'] if 'fr' in item['description'] else ''
                     yield video_group_element

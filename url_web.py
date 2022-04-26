@@ -16,6 +16,7 @@
     # from urllib2 import Request, urlopen
 
 from urllib.parse import urlparse
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 import os.path
@@ -607,7 +608,7 @@ def get_list_search_results(keywordsearch):
     """
 
     # https://services.nfb.ca/api/search/v4/films/?q=tes&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page=1
-    NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + keywordsearch + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
+    NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
 
     for nombre in range(NB_PAGES_RECHERCHE):
         page = nombre + 1

@@ -24,6 +24,7 @@ if url_web.verify_exist_config():
 else:
     MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 45 min.)"
 
+
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 
 # Example log: xbmc.log('YOUTUBE')

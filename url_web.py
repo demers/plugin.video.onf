@@ -1,20 +1,6 @@
 # -*- coding: utf-8 -*-
 # Free videos are provided by nfb.ca
 
-# import sys
-
-# Python 3 versus Python 2
-# if ((3, 0) <= sys.version_info <= (3, 9)):
-    # # import urllib.parse
-    # from urllib.parse import urlparse
-    # # import urllib.request
-    # # from urllib.request import urlopen
-    # from urllib.request import Request, urlopen
-# elif ((2, 0) <= sys.version_info <= (2, 9)):
-    # from urlparse import urlparse
-    # # from urllib2 import urlopen
-    # from urllib2 import Request, urlopen
-
 from urllib.parse import urlparse
 from urllib.parse import quote
 from urllib.request import Request, urlopen
@@ -51,6 +37,8 @@ URLS_ADRESSES = [ URL_ADRESSE_FILMS, URL_ADRESSE_CHAINES, URL_ADRESSE_PRINCIPALE
 # URLS_ADRESSES = [ URL_ADRESSE_PRINCIPALE ]
 # URLS_ADRESSES = [ URL_ADRESSE_SERIES ]
 # URLS_ADRESSES = [ URL_ADRESSE_CHAINES ]
+
+NOMBRE_CHARGEMENT_WEB = 0
 
 FICHIER_CATEGORIES = 'get_categories.json'
 FICHIER_VIDEOS = 'get_videos_'  # On ajoutera sha1 et .json
@@ -130,7 +118,6 @@ def read_url(url_text):
     req = Request(url_text, headers={'User-Agent': 'Mozilla/5.0'})
 
     try:
-        # url_content = urlopen(url_text).read()
         url_content = urlopen(req).read()
     except:
         url_content = None
@@ -537,6 +524,8 @@ def check_file_older_than(fichier, jours_max, hasard_actif=False):
     If hasard_actif, le number of days is between 1 and jours_max
     """
 
+    global NOMBRE_CHARGEMENT_WEB
+
     fichier_date = fichier + '.date'
 
     if hasard_actif:
@@ -545,26 +534,31 @@ def check_file_older_than(fichier, jours_max, hasard_actif=False):
         jours = jours_max
 
     retour_bool = False
+
     if not (os.path.isfile(fichier) and os.path.isfile(fichier_date)):
         retour_bool = True
     else:
-        criticalTime = datetime.datetime.today() - datetime.timedelta(days=jours)
-        try:
-            file_date = open(fichier_date, 'r')
-        except IOError:
-            return retour_bool
-
-        finally:
-            content_time = strip_all(file_date.read())
+        if (NOMBRE_CHARGEMENT_WEB < 3) or (not hasard_actif):
+            criticalTime = datetime.datetime.today() - datetime.timedelta(days=jours)
             try:
-                itemTime = datetime.datetime.strptime(content_time, "%Y-%m-%d")
-            except TypeError:
-                import time
-                itemTime = datetime.datetime.fromtimestamp(time.mktime(time.strptime(content_time, "%Y-%m-%d")))
+                file_date = open(fichier_date, 'r')
+            except IOError:
+                return retour_bool
 
-            if itemTime < criticalTime:
-                retour_bool = True
-            file_date.close()
+            finally:
+                content_time = strip_all(file_date.read())
+                try:
+                    itemTime = datetime.datetime.strptime(content_time, "%Y-%m-%d")
+                except TypeError:
+                    import time
+                    itemTime = datetime.datetime.fromtimestamp(time.mktime(time.strptime(content_time, "%Y-%m-%d")))
+
+                if itemTime < criticalTime:
+                    retour_bool = True
+                file_date.close()
+
+    if (not retour_bool) and hasard_actif:
+        NOMBRE_CHARGEMENT_WEB += 1
     return retour_bool
 
 def save_dict(data_dict, fichier):
@@ -613,14 +607,15 @@ def get_list_search_results(keywordsearch):
     for nombre in range(NB_PAGES_RECHERCHE):
         page = nombre + 1
         url_content= read_url(NOUV_URL_ADRESSE + str(page))
-        content_json = json.loads(url_content)
-        if 'items' in content_json and content_json['items']:
-            for item in content_json['items']:
-                if 'title' in item and 'thumbnail_path' in item and 'slug' in item and 'description' in item and 'directors' in item and 'time' in item and 'year' in item:
-                    video_group_element = dict()
-                    video_group_element['name'] = item['title']
-                    video_group_element['thumb'] = 'https://dkyhanv6paotz.cloudfront.net/live/fit-in/704x396/medias/nfb_tube/' + item['thumbnail_path']
-                    video_group_element['video'] = get_video_url_from_site(None, 'https://www.onf.ca/film/' + item['slug'])
-                    video_group_element['genre'] = item['directors'][0]['name'] + ', ' + item['time'] + ', ' + str(item['year']) if item['directors'] else item['time'] + ', ' + str(item['year'])
-                    video_group_element['description'] = item['description']['fr'] if 'fr' in item['description'] else ''
-                    yield video_group_element
+        if url_content:
+            content_json = json.loads(url_content)
+            if 'items' in content_json and content_json['items']:
+                for item in content_json['items']:
+                    if 'title' in item and 'thumbnail_path' in item and 'slug' in item and 'description' in item and 'directors' in item and 'time' in item and 'year' in item:
+                        video_group_element = dict()
+                        video_group_element['name'] = item['title']
+                        video_group_element['thumb'] = 'https://dkyhanv6paotz.cloudfront.net/live/fit-in/704x396/medias/nfb_tube/' + item['thumbnail_path']
+                        video_group_element['video'] = get_video_url_from_site(None, 'https://www.onf.ca/film/' + item['slug'])
+                        video_group_element['genre'] = item['directors'][0]['name'] + ', ' + item['time'] + ', ' + str(item['year']) if item['directors'] else item['time'] + ', ' + str(item['year'])
+                        video_group_element['description'] = item['description']['fr'] if 'fr' in item['description'] else ''
+                        yield video_group_element

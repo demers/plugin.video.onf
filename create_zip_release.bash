@@ -2,6 +2,4 @@
 
 cd ..
 rm -f plugin.video.onf.zip
-cd plugin.video.onf
-cd ..
-zip -r plugin.video.onf.zip plugin.video.onf/* -x "*tests-venv*" -x "*tests*" -x "*.bash" -x "*.pyo" -x "*__pycache__*" -x "*.init" -x "*.py.*"
+zip -r plugin.video.onf.zip plugin.video.onf/addon.xml plugin.video.onf/fanart.jpg plugin.video.onf/icon.png plugin.video.onf/LICENCE plugin.video.onf/main.py plugin.video.onf/url_web.py

@@ -255,12 +255,19 @@ def get_video_genre_from_site(content_bs):
     "Extraire le genre de la vidéo"
 
     return_genre = ''
+
     job_shortinfos_element = content_bs.find('div', class_="shortInfos")
-    job_date_element = content_bs.find('span', class_="published")
     if job_shortinfos_element:
-        return_genre += 'Réalisation: ' + strip_all(job_shortinfos_element.text)
-    if job_date_element:
-        return_genre += ' Date: ' + strip_all(job_date_element.text)
+        job_name_element = content_bs.find('span', {'itemprop': 'name'})
+        if job_name_element:
+            return_genre += 'Réalisation: ' + strip_all(job_name_element.text)
+
+        job_date_element = job_shortinfos_element.find('span', class_="published")
+        if job_date_element:
+            return_genre += ', Date: ' + strip_all(job_date_element.text)
+        job_duree_element = job_shortinfos_element.find('span', class_="duration duree")
+        if job_duree_element:
+            return_genre += ', Durée: ' + strip_all(job_duree_element.text)
 
     return return_genre
 

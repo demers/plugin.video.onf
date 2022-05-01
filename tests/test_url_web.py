@@ -18,10 +18,10 @@ class GetWebTests(unittest.TestCase):
         video_expected = {'name': 'Quand tombe la neige', 'video': 'https://onf.ca/film/quand-tombe-la-neige/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film', 'thumb': 'https://dkyhanv6paotz.cloudfront.net/medias/nfb_tube/thumbs_large/2022/quand-tombe-la-neige-LG.jpg', 'genre': 'Réalisation: Barrie McLean1961 |                12 min Date: 1961', 'description': "Film de vulgarisation scientifique, Quand tombe la neige explique le processus de formation des cristaux de neige et décrit à l'aide d'exemples concrets les différentes sortes de neige, liées au degré de maturation des cristaux. Il est aussi question du rôle que la neige joue par rapport aux végétaux."}
         self.assertCountEqual(video_expected, videos_returned[0])
 
-    def test_get_videos_last3(self):
-        videos_returned = url_web.get_videos(url_web.get_categories()[-3]) # Nouvellement en ligne
-        video_expected = {'name': 'Quand tombe la neige', 'video': 'https://onf.ca/film/quand-tombe-la-neige/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film', 'thumb': 'https://dkyhanv6paotz.cloudfront.net/medias/nfb_tube/thumbs_large/2022/quand-tombe-la-neige-LG.jpg', 'genre': 'Réalisation: Barrie McLean1961 |                12 min Date: 1961', 'description': "Film de vulgarisation scientifique, Quand tombe la neige explique le processus de formation des cristaux de neige et décrit à l'aide d'exemples concrets les différentes sortes de neige, liées au degré de maturation des cristaux. Il est aussi question du rôle que la neige joue par rapport aux végétaux."}
-        self.assertCountEqual(video_expected, videos_returned[0])
+    # def test_get_videos_last3(self):
+        # videos_returned = url_web.get_videos(url_web.get_categories()[-3]) # Nouvellement en ligne
+        # video_expected = {'name': 'Quand tombe la neige', 'video': 'https://onf.ca/film/quand-tombe-la-neige/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film', 'thumb': 'https://dkyhanv6paotz.cloudfront.net/medias/nfb_tube/thumbs_large/2022/quand-tombe-la-neige-LG.jpg', 'genre': 'Réalisation: Barrie McLean1961 |                12 min Date: 1961', 'description': "Film de vulgarisation scientifique, Quand tombe la neige explique le processus de formation des cristaux de neige et décrit à l'aide d'exemples concrets les différentes sortes de neige, liées au degré de maturation des cristaux. Il est aussi question du rôle que la neige joue par rapport aux végétaux."}
+        # self.assertCountEqual(video_expected, videos_returned[0])
 
 class SearchTests(unittest.TestCase):
 

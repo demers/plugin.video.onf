@@ -22,7 +22,7 @@ import url_web
 if url_web.verify_exist_config():
     MESSAGE_CHARGEMENT = "Chargement... (-1 min.)"
 else:
-    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 45 min.)"
+    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 20 min.)"
 
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."

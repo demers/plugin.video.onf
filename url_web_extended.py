@@ -27,10 +27,13 @@ URL_PREFIXE = 'https://onf.ca'
 URL_ADRESSE_PRINCIPALE = URL_PREFIXE + '/index.php'
 
 URL_ADRESSE_FILMS = URL_PREFIXE + '/films'
+URL_ADRESSE_FILM = URL_PREFIXE + '/film'
 
 URL_ADRESSE_SERIES = URL_PREFIXE + '/series'
 
-URLS_ADRESSES = [ URL_ADRESSE_SERIES, URL_ADRESSE_FILMS, URL_ADRESSE_PRINCIPALE ]
+URL_ADRESSE_CHAINES = URL_PREFIXE + '/chaines'
+
+URLS_ADRESSES = [ URL_ADRESSE_SERIES, URL_ADRESSE_CHAINES, URL_ADRESSE_FILMS, URL_ADRESSE_PRINCIPALE ]
 
 NOMBRE_CHARGEMENT_WEB = 0
 
@@ -140,9 +143,34 @@ def add_h2h3_category(content_bs, categories_url):
             job_href_element = job_h2_element.find("a")
             if job_href_element and job_href_element.has_attr('href'):
                 url_video = verify_url_prefixe(job_href_element['href'], URL_PREFIXE)
-                # if verify_url_video_inside(url_video):
                 if not url_exclure(url_video):
                     retour_categories_url.append((strip_all(job_href_element.text), url_video))
+    return retour_categories_url
+
+def add_chaine_category(content_bs, categories_url):
+    "Cherche une categorie a et retourne la nouvelle liste"
+
+    retour_categories_url = categories_url
+    job_a_elements = content_bs.find_all("a")
+    for job_a_element in job_a_elements:
+        job_span_element = job_a_element.find('span', class_="labelChaine")
+        if job_span_element and job_a_element.has_attr('href') and (not job_span_element.text in [category_tuple[0] for category_tuple in retour_categories_url]):
+                url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
+                if not url_exclure(url_video):
+                    retour_categories_url.append((strip_all(job_span_element.text), url_video))
+    return retour_categories_url
+
+def add_serie_category(content_bs, categories_url):
+    "Cherche une categorie li et retourne la nouvelle série"
+
+    retour_categories_url = categories_url
+    job_a_elements = content_bs.find_all('a', class_='titre')
+    for job_a_element in job_a_elements:
+        if job_a_element.has_attr('href'):
+            url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
+            if not url_exclure(url_video):
+                retour_categories_url.append((strip_all(job_a_element.text), url_video))
+
     return retour_categories_url
 
 def add_titre_category(content_bs, categories_url):
@@ -153,7 +181,6 @@ def add_titre_category(content_bs, categories_url):
     for job_a_element in job_a_elements:
         if job_a_element.text and job_a_element.has_attr('href') and (not job_a_element.text in [category_tuple[0] for category_tuple in retour_categories_url]):
             url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
-            # if verify_url_video_inside(url_video):
             if not url_exclure(url_video):
                 retour_categories_url.append((strip_all(job_a_element.text), url_video))
     return retour_categories_url
@@ -209,6 +236,12 @@ def get_categories(content_bs=None, cache_ok=True):
                 liste_soup = BeautifulSoup(url_content, 'html.parser')
 
                 retour_categories_url = add_h2h3_category(liste_soup, retour_categories_url)
+
+                if url_ad == URL_ADRESSE_CHAINES:
+                    retour_categories_url = add_chaine_category(liste_soup, retour_categories_url)
+
+                if url_ad == URL_ADRESSE_SERIES:
+                    retour_categories_url = add_serie_category(liste_soup, retour_categories_url)
 
                 if url_ad == URL_ADRESSE_SERIES:
                     retour_categories_url = add_titre_category(liste_soup, retour_categories_url)
@@ -306,24 +339,6 @@ def append_video(video_element, liste_videos):
     if test_ajout:
         liste_videos.append(video_element)
 
-# def apply_jsjson(url_addr):
-    # url_content = read_url(url_addr)
-    # if url_content:
-        # liste_soup_category = BeautifulSoup(url_content, 'html.parser')
-        # job_script_elements = liste_soup_category.find_all("script")
-        # for job_script_element in job_script_elements:
-            # if job_script_element:
-                # # On va chercher la liste JSON après source =
-                # resultat_search = re.search(r"sources\s*=\s*\[([^\[\]]*)\]", job_script_element.text, re.DOTALL)
-                # if resultat_search:
-                    # resultat_search_convert1 = '[' + resultat_search[1] + ']'
-                    # resultat_search_convert2 = re.sub(r":\s*'(\w*)'", r': "\1"', resultat_search_convert1)
-                    # resultat_search_convert3 = re.sub(r'(\w+)\s*:', r"'\1':", resultat_search_convert2)
-                    # print(resultat_search_convert3)
-                    # print(json.loads(resultat_search_convert3))
-    # return "reponse"
-
-
 def get_videos(category, cache_ok=True):
     """
     Get the list of videofiles/streams.
@@ -386,6 +401,25 @@ def get_videos(category, cache_ok=True):
                             video_group_element['description'] = get_video_description_from_site(liste_soup_video)
                             append_video(video_group_element, retour_videos)
 
+            # On vérifie si l'URL est une série...
+            elif url_category.find('series'):
+                # La page contient des séries dans une liste de vignettes...
+                liste_soup_category = BeautifulSoup(url_content, 'html.parser')
+                job_li_elements = liste_soup_category.find_all('li', class_='vignette gratuit')
+                for job_li_element in job_li_elements:
+                    video_group_element = dict()
+                    if job_li_element.has_attr('id') and len(job_li_element['id']) >= 5:
+                        url_video = URL_ADRESSE_FILM + '/' + job_li_element['id'][5:]
+                        url_content = read_url(url_video)
+                        print(url_video)
+                        if url_content:
+                            liste_soup_video = BeautifulSoup(url_content, 'html.parser')
+                            video_group_element['name'] = get_video_name_from_site(liste_soup_video)
+                            video_group_element['video'] = get_video_url_from_site(liste_soup_video)
+                            video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
+                            video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
+                            video_group_element['description'] = get_video_description_from_site(liste_soup_video)
+                            append_video(video_group_element, retour_videos)
             else:
                 liste_soup_category = BeautifulSoup(url_content, 'html.parser')
 
@@ -405,8 +439,8 @@ def get_videos(category, cache_ok=True):
                             video_group_element['thumb'] = get_video_thumb_from_site(liste_soup_video)
                             video_group_element['genre'] = get_video_genre_from_site(liste_soup_video)
                             video_group_element['description'] = get_video_description_from_site(liste_soup_video)
-
                             append_video(video_group_element, retour_videos)
+
 
         save_dict(retour_videos, chemin_fichier_videos)
 

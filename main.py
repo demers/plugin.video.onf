@@ -22,7 +22,7 @@ import url_web
 if url_web.verify_exist_config():
     MESSAGE_CHARGEMENT = "Chargement... (-1 min.)"
 else:
-    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 45 min.)"
+    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 15 min.)"
 
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
@@ -111,7 +111,7 @@ def index():
         category_number += 1
 
     # Add a sort method for the virtual folder items (alphabetically, ignore articles)
-    xbmcplugin.addSortMethod(plugin.handle, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
+    # xbmcplugin.addSortMethod(plugin.handle, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(plugin.handle)
 
@@ -176,14 +176,23 @@ def show_category(category_number):
 
     # Set plugin category. It is displayed in some skins as the name
     # of the current section.
-    # category_id = list(url_web.get_categories())[int(category_number)]
-    category_id = (url_web.get_categories())[int(category_number)]
+
+    # Éliminer les catégories vides...
+    categories_verified = []
+    categories = url_web.get_categories()
+    for category in categories:
+
+        if url_web.get_videos(category):
+            categories_verified.append(category)
+
+    category_id = categories_verified[int(category_number)]
     xbmcplugin.setPluginCategory(plugin.handle, category_id)
     # Set plugin content. It allows Kodi to select appropriate views
     # for this type of content.
     xbmcplugin.setContent(plugin.handle, 'videos')
     # Get the list of videos in the category.
     videos = url_web.get_videos(category_id)
+
     # Iterate through videos.
     video_number = 0
     for video in videos:

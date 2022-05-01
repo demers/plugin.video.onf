@@ -166,23 +166,11 @@ def add_serie_category(content_bs, categories_url):
     retour_categories_url = categories_url
     job_a_elements = content_bs.find_all('a', class_='titre')
     for job_a_element in job_a_elements:
-        if job_a_element.has_attr('href'):
-            url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
-            if not url_exclure(url_video):
-                retour_categories_url.append((strip_all(job_a_element.text), url_video))
-
-    return retour_categories_url
-
-def add_titre_category(content_bs, categories_url):
-    "Cherche une categorie a classe titre et retourne la nouvelle liste"
-
-    retour_categories_url = categories_url
-    job_a_elements = content_bs.find_all("a", class_="titre")
-    for job_a_element in job_a_elements:
         if job_a_element.text and job_a_element.has_attr('href') and (not job_a_element.text in [category_tuple[0] for category_tuple in retour_categories_url]):
             url_video = verify_url_prefixe(job_a_element['href'], URL_PREFIXE)
             if not url_exclure(url_video):
                 retour_categories_url.append((strip_all(job_a_element.text), url_video))
+
     return retour_categories_url
 
 def add_rss_category(content_bs, categories_url):
@@ -235,16 +223,14 @@ def get_categories(content_bs=None, cache_ok=True):
                 url_content = read_url(url_ad)
                 liste_soup = BeautifulSoup(url_content, 'html.parser')
 
-                retour_categories_url = add_h2h3_category(liste_soup, retour_categories_url)
+                if url_ad == URL_ADRESSE_PRINCIPALE or url_ad == URL_ADRESSE_FILMS:
+                    retour_categories_url = add_h2h3_category(liste_soup, retour_categories_url)
 
                 if url_ad == URL_ADRESSE_CHAINES:
                     retour_categories_url = add_chaine_category(liste_soup, retour_categories_url)
 
                 if url_ad == URL_ADRESSE_SERIES:
                     retour_categories_url = add_serie_category(liste_soup, retour_categories_url)
-
-                if url_ad == URL_ADRESSE_SERIES:
-                    retour_categories_url = add_titre_category(liste_soup, retour_categories_url)
 
                 # Aller chercher le fil RSS
                 if url_ad == URL_ADRESSE_PRINCIPALE:

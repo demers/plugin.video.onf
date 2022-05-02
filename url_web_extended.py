@@ -388,7 +388,8 @@ def get_videos(category, cache_ok=True):
                             append_video(video_group_element, retour_videos)
 
             # On vérifie si l'URL est une série...
-            elif url_category.find('series'):
+            # elif url_category.find('series'):
+            elif 'series' in url_category:
                 # La page contient des séries dans une liste de vignettes...
                 liste_soup_category = BeautifulSoup(url_content, 'html.parser')
                 job_li_elements = liste_soup_category.find_all('li', class_='vignette gratuit')
@@ -397,7 +398,6 @@ def get_videos(category, cache_ok=True):
                     if job_li_element.has_attr('id') and len(job_li_element['id']) >= 5:
                         url_video = URL_ADRESSE_FILM + '/' + job_li_element['id'][5:]
                         url_content = read_url(url_video)
-                        print(url_video)
                         if url_content:
                             liste_soup_video = BeautifulSoup(url_content, 'html.parser')
                             video_group_element['name'] = get_video_name_from_site(liste_soup_video)

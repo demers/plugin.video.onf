@@ -1,25 +1,37 @@
-import url_web
+import url_web_extended
 
 import unittest
 
 class GetWebTests(unittest.TestCase):
 
+    def test_get_categories_40(self):
+        categories_returned = url_web_extended.get_categories()
+        self.assertGreater(len(categories_returned), 40, "Le nombre de catégories est en nombre de moins de 40...")
+
     def test_get_categories_non_vides(self):
-        categories_returned = url_web.get_categories()
+        categories_returned = url_web_extended.get_categories()
         for category in categories_returned:
             self.assertGreater(len(category), 0, "La catégogie '" + category + "' est vide...")
 
     def test_get_videos_last(self):
-        videos_returned = url_web.get_videos(url_web.get_categories()[-1]) # Ajouts récents (RSS)
+        videos_returned = url_web_extended.get_videos(url_web_extended.get_categories()[-1]) # Ajouts récents (RSS)
         video_expected = {'name': 'Quand tombe la neige', 'video': 'https://onf.ca/film/quand-tombe-la-neige/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film', 'thumb': 'https://dkyhanv6paotz.cloudfront.net/medias/nfb_tube/thumbs_large/2022/quand-tombe-la-neige-LG.jpg', 'genre': 'Réalisation: Barrie McLean1961 |                12 min Date: 1961', 'description': "Film de vulgarisation scientifique, Quand tombe la neige explique le processus de formation des cristaux de neige et décrit à l'aide d'exemples concrets les différentes sortes de neige, liées au degré de maturation des cristaux. Il est aussi question du rôle que la neige joue par rapport aux végétaux."}
         self.assertCountEqual(video_expected, videos_returned[0])
+
+    def test_get_videos_nouvellement_en_ligne(self):
+        nouvellementenligne = 'Nouvellement en ligne'
+        my_categories = url_web_extended.get_categories()
+        if nouvellementenligne in my_categories:
+            self.assertGreater(len(url_web_extended.get_videos(nouvellementenligne)), 100, "La catégogie '" + nouvellementenligne + "' contient moins de 100 éléments...")
+        else:
+            self.fail("La catégorie '" + nouvellementenligne + "' n'existe pas!")
 
 class SearchTests(unittest.TestCase):
 
 
     def test_list_search_results_movie_keyword(self):
 
-        search_results_returned = url_web.get_list_search_results('Québec')
+        search_results_returned = url_web_extended.get_list_search_results('Québec')
         # search_results_expected = list()
         # search_results_expected.append({'name': 'Nothing to hide',
                                         # 'thumb': 'https://horscine.org/wp-content/uploads/2020/10/nothingtohide.jpg',
@@ -33,12 +45,12 @@ class SearchTests(unittest.TestCase):
 class ConvertTests(unittest.TestCase):
 
     def test_convert_video_path_onf1(self):
-        urlvimeo = url_web.convert_video_path('https://onf.ca/film/rose-les/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film')
+        urlvimeo = url_web_extended.convert_video_path('https://onf.ca/film/rose-les/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film')
 
         self.assertEqual(urlvimeo, 'https://dcly21uuqtecw.cloudfront.net/hls/1001062_1001061_DM-13377/1001062_1001061_DM-13377.m3u8')
 
     def test_convert_video_path_onf2(self):
-        urlyoutube = url_web.convert_video_path('https://www.onf.ca/film/apatrides/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film')
+        urlyoutube = url_web_extended.convert_video_path('https://www.onf.ca/film/apatrides/embed/player/?player_mode=&embed_mode=0&auto_focus=1&context_type=film')
 
         self.assertEqual(urlyoutube, 'https://dcly21uuqtecw.cloudfront.net/hls/1001195_1021296_DM-13539/1001195_1021296_DM-13539.m3u8')
 

@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo killall -9 kodi
+sudo killall -9 kodi.bin

@@ -2,7 +2,7 @@
 # Module: main
 # Author: Roman V. M. and modified by Francois-N. Demers
 # Created on: 28.11.2014
-# Modified on: 22.1.2022 by adding use of script.module.routing and config
+# Modified on: 7.5.2022 by adding use of script.module.routing and config
 # License: GPL v.3 https://www.gnu.org/copyleft/gpl.html
 """
 Video plugin that is compatible with Kodi 19.x "Matrix" and above
@@ -22,11 +22,11 @@ import url_web
 # Attendre 7 secondes au cas où un VPN s'active...
 time.sleep(7)
 
-# MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 12 min. max.)"
+# MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 45 min. max.)"
 if url_web.verify_exist_config():
     MESSAGE_CHARGEMENT = "Chargement... (-1 min.)"
 else:
-    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 20 min.)"
+    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 45 min.)"
 
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
@@ -140,8 +140,6 @@ def search():
 
     for result_item in list_results:
 
-        # url = plugin.url_for(show_search_result, query)
-        # query_result = plugin.args['query'][0]
         list_item = xbmcgui.ListItem(label=result_item['name'])
         # Set additional info for the list item.
         # 'mediatype' is needed for skin to display info for this ListItem correctly.
@@ -175,8 +173,6 @@ def search():
 
 @plugin.route('/category/<category_number>')
 def show_category(category_number):
-    # xbmcplugin.addDirectoryItem(plugin.handle, "", xbmcgui.ListItem("Hello category %s!" % category_id))
-    # xbmcplugin.endOfDirectory(plugin.handle)
 
     # Set plugin category. It is displayed in some skins as the name
     # of the current section.
@@ -249,17 +245,6 @@ def route_play_category_video(category_number, video_number):
 
     exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
     # exact_video_path_to_play = video_identified['video']
-
-    # # If the URL is not changed...
-    # if url_web.convert_video_path(video_identified['video']) == video_identified['video']:
-        # __addon__ = xbmcaddon.Addon()
-        # __addonname__ = __addon__.getAddonInfo('name')
-        # __icon__ = __addon__.getAddonInfo('icon')
-        # line_notification = MESSAGE_ERREUR_VIDEO
-        # time = 5000 #in miliseconds
-
-        # # https://kodi.wiki/view/GUI_tutorial
-        # xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
 
     play_video(exact_video_path_to_play)
 

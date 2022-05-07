@@ -15,19 +15,10 @@ import xbmcplugin
 import routing
 import xbmc
 import xbmcaddon
-import time
 
 import url_web
 
-# Attendre 7 secondes au cas où un VPN s'active...
-time.sleep(7)
-
-# MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 12 min. max.)"
-if url_web.verify_exist_config():
-    MESSAGE_CHARGEMENT = "Chargement... (-1 min.)"
-else:
-    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 45 min.)"
-
+MESSAGE_CHARGEMENT = "Chargement..."
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 
@@ -54,6 +45,10 @@ def play_video(path):
 
 @plugin.route('/')
 def index():
+    # Attendre 7 secondes au cas où un VPN s'active...
+    # import time
+    # time.sleep(7)
+
     categories = url_web.get_categories()
     xbmcplugin.setPluginCategory(plugin.handle, 'Vidéos ONF/NFB')
     xbmcplugin.setContent(plugin.handle, 'videos')
@@ -128,7 +123,6 @@ def get_user_input():
     query = kb.getText() # User input
     return query
 
-# EN COMMENTAIRE POUR CACHER CET OPTION...
 @plugin.route('/search')
 def search():
     query_result = get_user_input()
@@ -140,8 +134,6 @@ def search():
 
     for result_item in list_results:
 
-        # url = plugin.url_for(show_search_result, query)
-        # query_result = plugin.args['query'][0]
         list_item = xbmcgui.ListItem(label=result_item['name'])
         # Set additional info for the list item.
         # 'mediatype' is needed for skin to display info for this ListItem correctly.
@@ -248,18 +240,6 @@ def route_play_category_video(category_number, video_number):
         video_identified = videos[int(video_number)]
 
     exact_video_path_to_play = url_web.convert_video_path(video_identified['video'])
-    # exact_video_path_to_play = video_identified['video']
-
-    # # If the URL is not changed...
-    # if url_web.convert_video_path(video_identified['video']) == video_identified['video']:
-        # __addon__ = xbmcaddon.Addon()
-        # __addonname__ = __addon__.getAddonInfo('name')
-        # __icon__ = __addon__.getAddonInfo('icon')
-        # line_notification = MESSAGE_ERREUR_VIDEO
-        # time = 5000 #in miliseconds
-
-        # # https://kodi.wiki/view/GUI_tutorial
-        # xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
 
     play_video(exact_video_path_to_play)
 
@@ -270,7 +250,6 @@ def route_play_video():
     # Use function convert_video_path to get exact path string.
     exact_video_path_to_play = url_web.convert_video_path(video_url)
     play_video(exact_video_path_to_play)
-    # play_video(video_url)
 
 if __name__ == '__main__':
     plugin.run()

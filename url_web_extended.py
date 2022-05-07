@@ -432,6 +432,7 @@ def get_videos(category, cache_ok=True):
 
     return retour_videos
 
+
 def convert_video_path(path_video):
     """
     Convert path string to exact path string

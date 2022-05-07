@@ -15,12 +15,8 @@ import xbmcplugin
 import routing
 import xbmc
 import xbmcaddon
-import time
 
 import url_web
-
-# Attendre 7 secondes au cas où un VPN s'active...
-time.sleep(7)
 
 # MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 45 min. max.)"
 if url_web.verify_exist_config():

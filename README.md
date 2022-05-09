@@ -12,16 +12,16 @@ Le premier permet de chercher par mots-clés dans la base de données du site
 ONF.ca.  Le résultat est une liste de vidéos identique à ce qu'on obtient en
 utilisant l'outil de recherche du site ONF.ca
 
-Le deuxième fournit les 15 derniers vidéos ajoutés sur le site ONF.ca.  Le
+Le deuxième fournit les 15 derniers vidéos ajoutées sur le site ONF.ca.  Le
 résultat vient du fil RSS du site à https://www.onf.ca/fil-rss/ajouts-recents/
 
 Le chargement se fait en moins d'une minute.
 
 ## Téléchargements Kodi
 
-Voir la section Releases de Github pour télécharger les fichiers d'installation
+Voir la section *Releases* de Github pour télécharger les fichiers d'installation
 ZIP pour Kodi Matrix.  Pas de version Leia (antérieure à Matrix) pour ce module.
-i
+
 ## Version étendue
 
 J'ai développé aussi une version étendue du module.  Cette version est stable mais

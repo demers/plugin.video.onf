@@ -1,17 +1,19 @@
 import url_web_extended
 
+from bs4 import BeautifulSoup
+
 import unittest
 
 class GetWebTests(unittest.TestCase):
-
-    def test_get_categories_40(self):
-        categories_returned = url_web_extended.get_categories()
-        self.assertGreater(len(categories_returned), 40, "Le nombre de catégories est en nombre de moins de 40...")
 
     def test_get_categories_non_vides(self):
         categories_returned = url_web_extended.get_categories()
         for category in categories_returned:
             self.assertGreater(len(category), 0, "La catégogie '" + category + "' est vide...")
+
+    def test_get_categories_40(self):
+        categories_returned = url_web_extended.get_categories()
+        self.assertGreater(len(categories_returned), 40, "Le nombre de catégories est en nombre de moins de 40...")
 
     def test_get_videos_last(self):
         videos_returned = url_web_extended.get_videos(url_web_extended.get_categories()[-1]) # Ajouts récents (RSS)
@@ -25,6 +27,42 @@ class GetWebTests(unittest.TestCase):
             self.assertGreater(len(url_web_extended.get_videos(nouvellementenligne)), 100, "La catégogie '" + nouvellementenligne + "' contient moins de 100 éléments...")
         else:
             self.fail("La catégorie '" + nouvellementenligne + "' n'existe pas!")
+
+class TagsTests(unittest.TestCase):
+
+    def test_h2h3_category(self):
+
+        url_content = url_web_extended.read_url(url_web_extended.URL_ADRESSE_PRINCIPALE)
+        liste_soup = BeautifulSoup(url_content, 'html.parser')
+        job_h2_elements = liste_soup.find_all("h2", class_="h3")
+        self.assertGreater(len(job_h2_elements), 6, "Le nombre de section h2 est en nombre de moins de 6...")
+
+    def test_serie_category(self):
+
+        url_content = url_web_extended.read_url(url_web_extended.URL_ADRESSE_SERIES)
+        liste_soup = BeautifulSoup(url_content, 'html.parser')
+        job_a_elements = liste_soup.find_all('a', class_='titre')
+        self.assertGreater(len(job_a_elements), 5, "Le nombre de section de classe titre est en nombre de moins de 5...")
+
+    def test_chaine_category(self):
+
+        compteur_chaine = 0
+        url_content = url_web_extended.read_url(url_web_extended.URL_ADRESSE_CHAINES)
+        liste_soup = BeautifulSoup(url_content, 'html.parser')
+        job_a_elements = liste_soup.find_all("a")
+        for job_a_element in job_a_elements:
+            job_span_element = job_a_element.find('span', class_="labelChaine")
+            if job_span_element:
+                compteur_chaine += 1
+        self.assertGreater(compteur_chaine, 6, "Le nombre de section de classe lableChaine est en nombre de moins de 6...")
+
+    def test_rss(self):
+
+        url_content = url_web_extended.read_url(url_web_extended.URL_ADRESSE_PRINCIPALE)
+        liste_soup = BeautifulSoup(url_content, 'html.parser')
+        job_rss_element = liste_soup.find('link', {'type': "application/rss+xml"})
+        self.assertIsNotNone(job_rss_element, "Pas d'URL RSS dans la page principale.")
+
 
 class SearchTests(unittest.TestCase):
 

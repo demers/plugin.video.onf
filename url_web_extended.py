@@ -266,8 +266,6 @@ def get_video_url_from_site(content_bs = None, url_text = None):
     if job_embed_element and job_embed_element.has_attr('src'):
         return_url = verify_url_prefixe(job_embed_element['src'], URL_PREFIXE)
 
-    # Conversion finale de l'URL de la vidéo...
-    # return convert_video_path(return_url)
     return return_url
 
 def get_video_genre_from_site(content_bs):

@@ -23,6 +23,9 @@ ADDON_ID = 'plugin.video.onf'
 URL_PREFIXE = 'https://onf.ca'
 URL_ADRESSE_PRINCIPALE = URL_PREFIXE + '/index.php'
 
+# Les pages contenant certains mots ne peuvent être considérés...
+URL_A_ENLEVER = []
+
 # Section des fils RSS
 # RSS_TEXTE = 'Ajouts récents (RSS)'
 RSS_TEXTE = 'Derniers ajouts'
@@ -303,7 +306,8 @@ def get_videos(category, cache_ok=True):
         # Chargement de la page des vidéos...
         url_content = read_url(url_category)
 
-        liste_soup_category = BeautifulSoup(url_content, 'html5lib')
+        # liste_soup_category = BeautifulSoup(url_content, 'html5lib')
+        liste_soup_category = BeautifulSoup(url_content)
 
         articles_soupe = liste_soup_category.findAll('item')
         for article in articles_soupe:

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Docker kodi headless
 
 # Basé sur...
 # https://github.com/matthuisman/docker-kodi-headless

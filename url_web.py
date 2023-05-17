@@ -1,5 +1,50 @@
 # -*- coding: utf-8 -*-
-# Free videos are provided by nfb.ca
+# url_web.py --- 
+# 
+# Filename: url_web.py
+# Description: 
+# Author: F-Nicola Demers
+# Maintainer: 
+# Created: jeu mai  4 11:28:29 2023 (-0400)
+# Version: 
+# Package-Requires: ()
+# Last-Updated: mer mai 17 10:58:58 2023 (-0400)
+#           By: F-Nicola Demers
+#     Update #: 21
+# URL: 
+# Doc URL: 
+# Keywords: 
+# Compatibility: 
+# 
+# 
+
+# Commentary: 
+# 
+# 
+# 
+# 
+
+# Change Log:
+# 
+# 
+# 
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
+# 
+# 
+
+# Code:
 
 # from urllib.parse import urlparse
 from urllib.parse import quote
@@ -23,6 +68,9 @@ ADDON_ID = 'plugin.video.onf'
 URL_PREFIXE = 'https://onf.ca'
 URL_ADRESSE_PRINCIPALE = URL_PREFIXE + '/index.php'
 
+APISEARCH = 'https://' + 'searchapi.nfb.ca'
+APISEARCH_PATH = '/api/search/v4/films/'
+
 # Les pages contenant certains mots ne peuvent être considérés...
 URL_A_ENLEVER = []
 
@@ -33,7 +81,8 @@ RSS_TEXTE = 'Derniers ajouts'
 # Variable disponible tout au long de l'exécution du script
 CATEGORIES_WITH_URL = []
 
-NB_PAGES_RECHERCHE = 4
+NB_PAGES_RECHERCHE = 1
+
 
 def strip_all(chaine):
     """
@@ -48,22 +97,24 @@ def strip_all(chaine):
 
 
 def get_random_day(max_days):
-    "Calcul le nombre de jours maximum au hasard"
+    """Calcul le nombre de jours maximum au hasard"""
     return random.randint(1, max_days)
 
+
 def verify_url_prefixe(chaine_url, prefixe_url):
-    "Ajouter domaine http au début si non présent"
+    """Ajouter domaine http au début si non présent"""
     if chaine_url[0:4] != 'http':
         return prefixe_url + chaine_url
     else:
         return chaine_url
+
 
 def verify_url_video_inside(url):
     "Vérifier s'il y a au moins une vidéo sur une page"
 
     reponse_video = False
 
-    url_content= read_url(url)
+    url_content = read_url(url)
     liste_soup = BeautifulSoup(url_content, 'html.parser')
 
     job_a_element = liste_soup.find("a", class_="containerScreenshot")
@@ -75,8 +126,9 @@ def verify_url_video_inside(url):
 
     return reponse_video
 
+
 def read_url(url_text):
-    "Chargement d'une page Web de façon sécuritaire"
+    """Chargement d'une page Web de façon sécuritaire."""
     req = Request(url_text, headers={'User-Agent': 'Mozilla/5.0'})
 
     try:
@@ -86,9 +138,9 @@ def read_url(url_text):
 
     return url_content
 
-def url_exclure(text):
-    "Vérifier si des mots à exclure sont présents"
 
+def url_exclure(text):
+    """Vérifier si des mots à exclure sont présents."""
     reponse = False
 
     for chaine in URL_A_ENLEVER:
@@ -99,18 +151,21 @@ def url_exclure(text):
 
 
 def add_h2h3_category(content_bs, categories_url):
-    "Cherche une categorie h2 avec classe h3 et retourne la nouvelle liste"
+    """Cherche une categorie h2 avec classe h3 et retourne la nouvelle liste."""
 
     retour_categories_url = categories_url
     job_h2_elements = content_bs.find_all("h2", class_="h3")
     for job_h2_element in job_h2_elements:
-        if job_h2_element.text and (not job_h2_element.text in [category_tuple[0] for category_tuple in retour_categories_url]):
+        if job_h2_element.text and (not job_h2_element.text in
+                                    [category_tuple[0]
+                                     for category_tuple in retour_categories_url]):
             job_href_element = job_h2_element.find("a")
             if job_href_element and job_href_element.has_attr('href'):
                 url_video = verify_url_prefixe(job_href_element['href'], URL_PREFIXE)
                 if not url_exclure(url_video):
                     retour_categories_url.append((strip_all(job_href_element.text), url_video))
     return retour_categories_url
+
 
 def add_chaine_category(content_bs, categories_url):
     "Cherche une categorie a et retourne la nouvelle liste"
@@ -124,6 +179,7 @@ def add_chaine_category(content_bs, categories_url):
                 if not url_exclure(url_video):
                     retour_categories_url.append((strip_all(job_span_element.text), url_video))
     return retour_categories_url
+
 
 def add_serie_category(content_bs, categories_url):
     "Cherche une categorie li et retourne la nouvelle série"
@@ -149,6 +205,7 @@ def add_titre_category(content_bs, categories_url):
             if not url_exclure(url_video):
                 retour_categories_url.append((strip_all(job_a_element.text), url_video))
     return retour_categories_url
+
 
 def add_rss_category(content_bs, categories_url):
     "Cherche une categorie rss et retourne la nouvelle liste"
@@ -307,7 +364,8 @@ def get_videos(category, cache_ok=True):
         url_content = read_url(url_category)
 
         # liste_soup_category = BeautifulSoup(url_content, 'html5lib')
-        liste_soup_category = BeautifulSoup(url_content)
+        liste_soup_category = BeautifulSoup(url_content, 'html.parser')
+        # liste_soup_category = BeautifulSoup(url_content, 'lxml')
 
         articles_soupe = liste_soup_category.findAll('item')
         for article in articles_soupe:
@@ -383,10 +441,12 @@ def get_addondir():
 
     except ImportError:
         # reponse = '/home/ubuntu/.kodi/userdata/addon_data/plugin.video.onf/'
-        reponse = '/home/ubuntu/.kodi/userdata/addon_data/' + ADDON_ID + '/'
+        # reponse = '/home/ubuntu/.kodi/userdata/addon_data/' + ADDON_ID + '/'
+        reponse = '~/.kodi/userdata/addon_data/' + ADDON_ID + '/'
 
     if not os.path.exists(reponse):
-        os.mkdir(reponse)
+        # os.mkdir(reponse)
+        os.makedirs(reponse)
 
     return reponse
 
@@ -395,9 +455,11 @@ def get_list_search_results(keywordsearch):
     Generate list results
     """
 
+    
     # https://services.nfb.ca/api/search/v4/films/?q=tes&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page=1
-    NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
-
+    # https://searchapi.nfb.ca/api/search/v4/films/?q=Qu%C3%A9bec&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page=1 
+    # NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
+    NOUV_URL_ADRESSE = APISEARCH + APISEARCH_PATH + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
     for nombre in range(NB_PAGES_RECHERCHE):
         page = nombre + 1
         url_content= read_url(NOUV_URL_ADRESSE + str(page))
@@ -423,3 +485,6 @@ def get_list_search_results(keywordsearch):
                         video_group_element['genre'] = 'Réalisation: ' + item['directors'][0]['name'] + ', ' + genre_time + ', année: ' + str(item['year']) if item['directors'] else genre_time + ', ' + str(item['year'])
                         video_group_element['description'] = item['description']['fr'] if 'fr' in item['description'] else ''
                         yield video_group_element
+
+# 
+# url_web.py ends here

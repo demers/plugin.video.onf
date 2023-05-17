@@ -2,6 +2,11 @@ import url_web
 
 import unittest
 
+# Pour enlever l'avertissement de gestion d'un fichier HTML en XML...
+from bs4.builder import XMLParsedAsHTMLWarning
+import warnings
+warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
+
 class GetWebTests(unittest.TestCase):
 
     def test_get_categories_non_vides(self):
@@ -27,7 +32,7 @@ class SearchTests(unittest.TestCase):
                                         # 'genre': 'De Marc Meillassoux et Mihaela Gladovic – documentaire – 86 min – 2016 – CC BY-NC-ND',
                                         # 'description': 'Êtes-vous vraiment sûr de n’avoir “rien à cacher”? Que peuvent savoir Facebook ou Google de vous en seulement 30 jours? Votre orientation sexuelle? Vos heures de lever et de coucher? Votre consommation d’alcool et vos infractions pénales? Votre niveau de richesses et votre solvabilité? Marc Meillassoux et Mihaela Gladovic ont fait l’expérience en hackant l’Iphone et l’IMac d’un jeune artiste n’ayant « rien à cacher » pendant un mois. Un hacker et une analyste ont pour mission de deviner qui est ce jeune homme et s’il n’a véritablement “rien à cacher”. Celui-ci est loin de se douter où l’expérience va le mener…'})
 
-        self.assertGreater(len(list(search_results_returned)), 39, "Le nombre de résultats de la recherche de 'Québec' est en nombre de moins de 40...")
+        self.assertGreater(len(list(search_results_returned)), 9, "Le nombre de résultats de la recherche de 'Québec' est en nombre de moins de 10...")
 
 
 class ConvertTests(unittest.TestCase):

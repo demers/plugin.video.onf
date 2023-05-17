@@ -9,7 +9,6 @@ Video plugin that is compatible with Kodi 19.x "Matrix" and above
 """
 
 import sys
-# from urllib.parse import urlencode, parse_qsl
 import xbmcgui
 import xbmcplugin
 import routing
@@ -20,9 +19,9 @@ import url_web
 
 # MESSAGE_CHARGEMENT = "Chargement... (entre 2 et 45 min. max.)"
 if url_web.verify_exist_config():
-    MESSAGE_CHARGEMENT = "Chargement... (-1 min.)"
+    MESSAGE_CHARGEMENT = "Chargement..."
 else:
-    MESSAGE_CHARGEMENT = "Configuration initiale... (+/- 45 min.)"
+    MESSAGE_CHARGEMENT = "Configuration initiale..."
 
 
 MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
@@ -33,6 +32,7 @@ MESSAGE_ERREUR_VIDEO = "Vidéo non-standard.  Risque d'erreur de lecture..."
 _URL = sys.argv[0]
 
 plugin = routing.Plugin()
+
 
 def play_video(path):
     """
@@ -58,14 +58,14 @@ def index():
     url = plugin.url_for(search)
     xbmcplugin.addDirectoryItem(plugin.handle, url, xbmcgui.ListItem("Recherche"), True)
 
-
     __addon__ = xbmcaddon.Addon()
     __addonname__ = __addon__.getAddonInfo('name')
     __icon__ = __addon__.getAddonInfo('icon')
     line_notification = MESSAGE_CHARGEMENT
-    time = 10000 #in miliseconds
+    time = 10000  # in miliseconds
     # https://kodi.wiki/view/GUI_tutorial
-    xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(__addonname__,line_notification, time, __icon__))
+    xbmc.executebuiltin('Notification(%s, %s, %d, %s)' %
+                        (__addonname__, line_notification, time, __icon__))
 
     category_number = 0
     for category in categories:
@@ -115,6 +115,7 @@ def index():
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(plugin.handle)
 
+
 # https://forum.kodi.tv/showthread.php?tid=312476
 def get_user_input():
     kb = xbmc.Keyboard('', 'Entrez ce que vous cherchez... ')
@@ -124,7 +125,7 @@ def get_user_input():
     query = kb.getText() # User input
     return query
 
-# EN COMMENTAIRE POUR CACHER CET OPTION...
+
 @plugin.route('/search')
 def search():
     query_result = get_user_input()
@@ -166,6 +167,7 @@ def search():
 
     xbmcplugin.addSortMethod(plugin.handle, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
     xbmcplugin.endOfDirectory(plugin.handle)
+
 
 @plugin.route('/category/<category_number>')
 def show_category(category_number):
@@ -222,20 +224,22 @@ def show_category(category_number):
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(plugin.handle)
 
+
 @plugin.route('/video_category/<category_number>/<video_number>')
 def route_play_category_video(category_number, video_number):
     categories = url_web.get_categories()
     # From category_number, extract category_id
     if url_web.is_iterator(categories):
-        category_identified = next(x for i,x in enumerate(categories) if i==int(category_number))
+        category_identified = next(x for i, x in
+                                   enumerate(categories) if i == int(category_number))
     else:
         category_identified = categories[int(category_number)]
-
 
     videos = url_web.get_videos(category_identified)
     # From video_number, extract video_id
     if url_web.is_iterator(videos):
-        video_identified = next(x for i,x in enumerate(videos) if i==int(video_number))
+        video_identified = next(x for i, x in
+                                enumerate(videos) if i == int(video_number))
     else:
         video_identified = videos[int(video_number)]
 
@@ -243,6 +247,7 @@ def route_play_category_video(category_number, video_number):
     # exact_video_path_to_play = video_identified['video']
 
     play_video(exact_video_path_to_play)
+
 
 @plugin.route('/video')
 def route_play_video():
@@ -252,6 +257,7 @@ def route_play_video():
     exact_video_path_to_play = url_web.convert_video_path(video_url)
     play_video(exact_video_path_to_play)
     # play_video(video_url)
+
 
 if __name__ == '__main__':
     plugin.run()

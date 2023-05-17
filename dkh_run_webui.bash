@@ -8,8 +8,13 @@ GROUPID=1000
 KODICONFIG=~/.kodi.run
 
 echo "Suppression du dossier de configuration Kodi..."
-rm -f -r ~/.kodi.run
-mkdir -p ~/.kodi.run/addons/
+rm -f -r $KODICONFIG 
+mkdir -p $KODICONFIG/addons/
+
+source create_zip_release.bash
+cp ./plugin.video.onf.zip $KODICONFIG
+cd $KODICONFIG/addons/
+unzip -o -u ../plugin.video.onf.zip
 
 docker ps | grep kodi-headless
 echo ""
@@ -24,7 +29,7 @@ then
     echo Démarrage du nouveau conteneur...
     docker run -d \
 	--name=kodi-headless \
-	-v ./:/prj \
+	# -v ./:/prj \
 	-v $KODICONFIG:/config/.kodi \
 	-e PUID=$USERID \
 	-e PGID=$GROUPID \
@@ -34,22 +39,26 @@ then
 	matthuisman/kodi-headless:Nexus
 	# matthuisman/kodi-headless:Matrix
 
-    echo "Mise à jour APT..."
-    docker exec kodi-headless bash -c "apt update"
+    # echo "Mise à jour APT..."
+    # docker exec kodi-headless bash -c "apt update"
 
-    echo "Installation PIP3.."
-    docker exec kodi-headless bash -c "apt install -y python3-pip"
+    # echo "Installation PIP3.."
+    # docker exec kodi-headless bash -c "apt install -y python3-pip"
 
-    echo "Installation BS4..."
-    docker exec kodi-headless bash -c "pip3 install beautifulsoup4"
+    # echo "Installation BS4..."
+    # docker exec kodi-headless bash -c "pip3 install beautifulsoup4"
 fi
 
-source create_zip_release.bash
-cp ./plugin.video.onf.zip ~/.kodi.run
-cd ~/.kodi.run/addons/
-unzip -f ../plugin.video.onf.zip
+# Installation d'une dépendance...
+sleep 3
+docker exec kodi-headless install_addon "script.module.routing"
+sleep 1
+docker exec kodi-headless install_addon "script.module.beautifulsoup4"
+sleep 1
+docker exec kodi-headless install_addon "script.module.html5lib"
+sleep 1
 
 echo "Démarrage de la page http://localhost:8080..."
 # open http://localhost:8080
-brave-browser http://localhost:8080
+brave-browser http://localhost:8080 &
 

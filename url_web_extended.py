@@ -10,6 +10,8 @@ import os.path
 # Import libraries to analyse Web pages
 from bs4 import BeautifulSoup
 
+
+
 import os
 
 import json
@@ -25,6 +27,9 @@ ADDON_ID = 'plugin.video.onf'
 
 URL_PREFIXE = 'https://onf.ca'
 URL_ADRESSE_PRINCIPALE = URL_PREFIXE + '/index.php'
+
+APISEARCH = 'https://' + 'searchapi.nfb.ca'
+APISEARCH_PATH = '/api/search/v4/films/'
 
 URL_ADRESSE_FILMS = URL_PREFIXE + '/films'
 URL_ADRESSE_FILM = URL_PREFIXE + '/film'
@@ -54,7 +59,7 @@ RSS_TEXTE = 'Ajouts récents (RSS)'
 # Variable disponible tout au long de l'exécution du script
 CATEGORIES_WITH_URL = []
 
-NB_PAGES_RECHERCHE = 4
+NB_PAGES_RECHERCHE = 3
 
 def strip_all(chaine):
     """
@@ -366,7 +371,8 @@ def get_videos(category, cache_ok=True):
 
             # Vérifier si c'est un fil RSS...
             if category == RSS_TEXTE:
-                liste_soup_category = BeautifulSoup(url_content, 'html5lib')
+                # liste_soup_category = BeautifulSoup(url_content, 'html5lib')
+                liste_soup_category = BeautifulSoup(url_content, 'html.parser')
 
                 articles_soupe = liste_soup_category.findAll('item')
                 for article in articles_soupe:
@@ -485,10 +491,12 @@ def get_addondir():
 
     except ImportError:
         # reponse = '/home/ubuntu/.kodi/userdata/addon_data/plugin.video.onf/'
-        reponse = '/home/ubuntu/.kodi/userdata/addon_data/' + ADDON_ID + '/'
+        # reponse = '/home/ubuntu/.kodi/userdata/addon_data/' + ADDON_ID + '/'
+        reponse = '~/.kodi/userdata/addon_data/' + ADDON_ID + '/'
 
     if not os.path.exists(reponse):
-        os.mkdir(reponse)
+        # os.mkdir(reponse)
+        os.makedirs(reponse)
 
     return reponse
 
@@ -591,7 +599,9 @@ def get_list_search_results(keywordsearch):
     """
 
     # https://services.nfb.ca/api/search/v4/films/?q=tes&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page=1
-    NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
+    # https://searchapi.nfb.ca/api/search/v4/films/?q=Qu%C3%A9bec&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page=1 
+    # NOUV_URL_ADRESSE = 'https://services.nfb.ca/api/search/v4/films/' + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
+    NOUV_URL_ADRESSE = APISEARCH + APISEARCH_PATH + '?q=' + quote(keywordsearch) + '&per_page=10&language=fr&safe_search=false&sort_by=relevance&order_by=desc&include=description&page='
 
     for nombre in range(NB_PAGES_RECHERCHE):
         page = nombre + 1
